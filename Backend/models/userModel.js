@@ -1,6 +1,6 @@
-const mongoose = require('mongoose');
-const validator = require('validator');
-const bcrypt = require('bcrypt');
+import mongoose from 'mongoose';
+import validator from 'validator';
+import bcrypt from 'bcrypt';
 
 const userSchema = mongoose.Schema({
   name: {
@@ -44,7 +44,7 @@ userSchema.pre('save', async function () {
 userSchema.methods.updatePassword = async function (updatedValue) {
   const isSame = await bcrypt.compare(
     updatedValue.currentPassword,
-    this.password
+    this.password,
   );
   if (!isSame) {
     throw new Error('Current password do not match');
@@ -55,4 +55,4 @@ userSchema.methods.updatePassword = async function (updatedValue) {
 };
 
 const User = mongoose.model('User', userSchema);
-module.exports = User;
+export default User;
