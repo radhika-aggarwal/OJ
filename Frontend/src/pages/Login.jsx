@@ -1,16 +1,34 @@
 import React, { useState } from 'react';
 import { login } from '../services/api';
+import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
+// import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await login({
-      email,
-      password,
-    });
+    if (!email || !password) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+    setLoading(true);
+
+    try {
+      const response = await login({ email, password });
+      localStorage.setItem('token', response.token);
+      toast.success('Login successful!');
+      navigate('/');
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 font-urbanist">
@@ -21,7 +39,7 @@ export default function Login() {
         </div>
 
         {/* Form */}
-        <form className="flex flex-col gap-4">
+        <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
           <div>
             <label className="font-semibold text-sm">Email</label>
             <input
@@ -37,7 +55,7 @@ export default function Login() {
             <label className="flex justify-between font-semibold text-sm">
               <span>Password</span>
               <a
-                href="/forgot-password"
+                href="/reset-password"
                 className="text-blue-500 hover:underline text-xs"
               >
                 Forgot Password?
@@ -53,29 +71,13 @@ export default function Login() {
           </div>
 
           <button
+            disabled={loading}
             type="submit"
             className="bg-black text-white py-2 rounded-lg font-semibold hover:bg-gray-800 transition-colors"
-            onClick={handleSubmit}
           >
-            Login
+            {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
-
-        <div className="flex items-center my-6 text-gray-400 text-xs">
-          <hr className="grow border-gray-300" />
-          <span className="mx-3">or continue with</span>
-          <hr className="grow border-gray-300" />
-        </div>
-
-        {/* Google Button */}
-        <button className="flex items-center justify-center gap-2 border rounded-lg py-2 w-full hover:bg-gray-50 transition-colors">
-          <img
-            src="src/assets/google-icon.png"
-            alt="Google"
-            className="w-5 h-5 object-contain"
-          />
-          <span className="text-sm font-medium">Continue with Google</span>
-        </button>
 
         {/* Signup */}
         <p className="text-center text-gray-500 text-sm mt-6">

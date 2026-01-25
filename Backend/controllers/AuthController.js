@@ -12,13 +12,14 @@ const signToken = (id) => {
 const createWebToken = (user, statusCode, res) => {
   const token = signToken(user._id);
 
+  const isProduction = process.env.NODE_ENV?.trim() === 'production';
   const cookieOptions = {
     expires: new Date(
       Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000,
     ),
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
   };
 
   res.cookie('jwt', token, cookieOptions);
@@ -46,7 +47,8 @@ export const signup = async (req, res, next) => {
       confirmPassword,
     });
 
-    createWebToken(newUser, 201, res);
+    
+    return createWebToken(newUser, 201, res);
   } catch (err) {
     return next(new AppError('Something went wrong', 500));
   }
@@ -65,7 +67,7 @@ export const login = async (req, res, next) => {
       return next(new AppError('Incorrect email or password', 401));
     }
 
-    createWebToken(user, 200, res);
+    return createWebToken(user, 200, res);
   } catch (err) {
     return next(new AppError('Something went wrong', 500));
   }

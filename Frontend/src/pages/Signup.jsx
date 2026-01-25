@@ -1,21 +1,42 @@
 import React, { useState } from 'react';
 import AuthContext from '../context/AuthContext';
 import { signup } from '../services/api';
+import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 export default function Signup() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [err, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await signup({
-      name,
-      email,
-      password,
-      confirmPassword,
-    });
+    setError('');
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      await signup({
+        name,
+        email,
+        password,
+        confirmPassword,
+      });
+      toast.success('Account created! Please verify your email.');
+      navigate('/email-verify');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 font-urbanist">
@@ -66,29 +87,15 @@ export default function Signup() {
               onChange={(e) => setConfirmPassword(e.target.value)}
             />
           </div>
+          {err && <p className="text-red-500 text-sm">{err}</p>}
           <button
+            disabled={loading}
             type="submit"
             className="bg-black text-white py-2 rounded-lg font-semibold hover:bg-gray-800 transition-colors"
           >
-            Create an Account
+            {loading ? 'Creating...' : 'Create an Account'}
           </button>
         </form>
-
-        <div className="flex items-center my-6 text-gray-400 text-xs">
-          <hr className="grow border-gray-300" />
-          <span className="mx-3">or continue with</span>
-          <hr className="grow border-gray-300" />
-        </div>
-
-        {/* Google button */}
-        <button className="flex items-center justify-center gap-2 border rounded-lg py-2 w-full hover:bg-gray-50 transition-colors">
-          <img
-            src="src/assets/google-icon.png"
-            alt="Google"
-            className="w-5 h-5 object-contain"
-          />
-          <span className="text-sm font-medium">Continue with Google</span>
-        </button>
 
         {/* Login */}
         <p className="text-center text-gray-500 text-sm mt-6">
