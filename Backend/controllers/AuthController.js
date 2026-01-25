@@ -47,7 +47,6 @@ export const signup = async (req, res, next) => {
       confirmPassword,
     });
 
-    
     return createWebToken(newUser, 201, res);
   } catch (err) {
     return next(new AppError('Something went wrong', 500));
@@ -217,7 +216,15 @@ export const updatePassword = async (req, res, next) => {
 
 export const isAuthenticated = async (req, res, next) => {
   try {
-    return res.status(200).json({ status: 'success' });
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return next(new AppError('User not found', 404));
+    }
+
+    return res.status(200).json({
+      status: 'success',
+      data: { user },
+    });
   } catch (err) {
     return next(new AppError(err.message, 500));
   }

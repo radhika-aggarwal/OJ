@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import AuthContext from '../context/AuthContext';
-import { signup } from '../services/api';
+import useAuth from '../hooks/useAuth';
+import { signup as signupAPI } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
@@ -12,24 +12,36 @@ export default function Signup() {
   const [loading, setLoading] = useState(false);
   const [err, setError] = useState('');
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (!name || !email || !password || !confirmPassword) {
+      setError('Please fill in all fields');
+      return;
+    }
     if (password !== confirmPassword) {
       setError('Passwords do not match');
+      return;
+    }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
       return;
     }
 
     setLoading(true);
 
     try {
-      await signup({
+      const response = await signupAPI({
         name,
         email,
         password,
         confirmPassword,
       });
+
+      login(response.data.user, response.token);
       toast.success('Account created! Please verify your email.');
       navigate('/email-verify');
     } catch (err) {

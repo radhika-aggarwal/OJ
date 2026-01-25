@@ -18,15 +18,20 @@ export default function EmailVerify() {
       await sendVerifyOTP();
       toast.success('OTP sent to your email!');
     } catch (err) {
-      toast.error(err.message);
-      setError(err.message);
+      const msg =
+        err.response?.data?.message || err.message || 'Something went wrong';
+      toast.error(msg);
+      setError(msg);
     } finally {
       setSendingOtp(false);
     }
   };
 
   useEffect(() => {
-    handleSendOtp();
+    const sendOtpOnMount = async () => {
+      await handleSendOtp();
+    };
+    sendOtpOnMount();
   }, []);
 
   const handleOtpVerification = async () => {
@@ -61,14 +66,14 @@ export default function EmailVerify() {
         <div className="flex justify-center mb-6">
           <input
             value={otp}
-            onChange={(e) => setOtp(e.target.value)}
+            onChange={(e) => setOtp(e.target.value.replace(/\D/, ''))} // only digits
             maxLength="6"
             className="h-12 w-2/3 text-center text-lg border-2 border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           ></input>
         </div>
 
         <button
-          disabled={loading}
+          disabled={loading || otp.length !== 6}
           className="w-full bg-black text-white py-2 rounded-lg font-semibold hover:bg-gray-800 transition-colors"
           onClick={handleOtpVerification}
         >

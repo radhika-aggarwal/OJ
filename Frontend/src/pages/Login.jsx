@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { login } from '../services/api';
+import { login as loginAPI } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-// import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -10,6 +10,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,10 +21,15 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const response = await login({ email, password });
-      localStorage.setItem('token', response.token);
+      const response = await loginAPI({ email, password });
+      login(response.data.user, response.token);
       toast.success('Login successful!');
-      navigate('/');
+
+      if (!response.data.user.isAccountVerified) {
+        navigate('/email-verify');
+      } else {
+        navigate('/');
+      }
     } catch (err) {
       toast.error(err.message);
     } finally {

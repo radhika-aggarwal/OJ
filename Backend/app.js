@@ -7,6 +7,7 @@ import authRouter from './routes/authRoutes.js';
 import userRouter from './routes/userRoutes.js';
 
 const app = express();
+connectDB();
 const port = process.env.PORT || 3000;
 
 app.use(
@@ -30,8 +31,6 @@ app.use((err, req, res, next) => {
     message: err.message,
   });
 });
-
-connectDB();
 
 app.listen(port, () => {
   console.log('server is running at :', port);

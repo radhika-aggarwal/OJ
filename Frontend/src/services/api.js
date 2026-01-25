@@ -1,68 +1,64 @@
 import axios from 'axios';
+import ApiError from '../utils/apiError';
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = import.meta.env.VITE_API_URL;
 
 const api = axios.create({
   baseURL: API_URL,
   withCredentials: true,
 });
 
-export const signup = async (data) => {
-  try {
-    const response = await api.post('/auth/signup', data);
-    return response.data;
-  } catch (error) {
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
     const message = error.response?.data?.message || 'Something went wrong';
-    throw new Error(message);
-  }
+    const statusCode = error.response?.status || 500;
+
+    return Promise.reject(new ApiError(message, statusCode));
+  },
+);
+
+export const signup = async (data) => {
+  const response = await api.post('/auth/signup', data);
+  return response.data;
 };
 
 export const login = async (data) => {
-  try {
-    const response = await api.post('/auth/login', data);
-    return response.data;
-  } catch (error) {
-    const message = error.response?.data?.message || 'Something went wrong';
-    throw new Error(message);
-  }
+  const response = await api.post('/auth/login', data);
+  return response.data;
 };
 
 export const sendVerifyOTP = async () => {
-  try {
-    const response = await api.post('/auth/send-verify-otp');
-    return response.data;
-  } catch (error) {
-    const message = error.response?.data?.message || 'Something went wrong';
-    throw new Error(message);
-  }
+  const response = await api.post('/auth/send-verify-otp');
+  return response.data;
 };
 
 export const verifyOtp = async (data) => {
-  try {
-    const response = await api.post('/auth/verify-email', data);
-    return response.data;
-  } catch (error) {
-    const message = error.response?.data?.message || 'Something went wrong';
-    throw new Error(message);
-  }
+  const response = await api.post('/auth/verify-email', data);
+  return response.data;
 };
 
 export const forgotPassword = async (email) => {
-  try {
-    const response = await api.post('/auth/forget-password', { email });
-    return response.data;
-  } catch (error) {
-    const message = error.response?.data?.message || 'Something went wrong';
-    throw new Error(message);
-  }
+  const response = await api.post('/auth/forget-password', { email });
+  return response.data;
 };
 
 export const resetPassword = async (data) => {
-  try {
-    const response = await api.patch('/auth/reset-password', data);
-    return response.data;
-  } catch (error) {
-    const message = error.response?.data?.message || 'Something went wrong';
-    throw new Error(message);
-  }
+  const response = await api.patch('/auth/reset-password', data);
+  return response.data;
+};
+
+export const updatePassword = async (data) => {
+  const response = await api.patch('/auth/update-password', data);
+  return response.data;
+};
+
+export const logout = async () => {
+  const response = await api.post('/auth/logout');
+  return response.data;
+};
+
+export const checkAuth = async () => {
+  const response = await api.get('/auth/is-auth');
+  return response.data;
 };

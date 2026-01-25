@@ -1,19 +1,69 @@
 import React from 'react';
-import { assets } from '../assets/assets';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
+import toast from 'react-hot-toast';
 
 export default function Navbar() {
+  const { isAuthenticated, user, logout, loading } = useAuth();
   const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    toast.success('Logged out successfully!');
+    navigate('/login');
+  };
+
+  if (loading) {
+    return (
+      <nav className="fixed top-0 left-0 right-0 bg-white shadow-sm p-4">
+        <div className="max-w-7xl mx-auto">
+          <span className="text-2xl font-bold">NexJudge</span>
+        </div>
+      </nav>
+    );
+  }
+
   return (
-    <div className="w-full flex justify-between items-center px-4 sm:px-24 absolute top-0">
-      <img src={assets.logo} alt="logo" className="w-28 sm:w-32"></img>
-      <button
-        onClick={() => navigate('/login')}
-        className="flex items-center gap-2 border border-gray-500 rounded-full px-6 py-2 text-gray-800 hover:bg-gray-100 transition-all"
-      >
-        Login
-        <img src={assets.arrow_icon} alt="" />
-      </button>
-    </div>
+    <nav className="fixed top-0 left-0 right-0 bg-white shadow-sm p-4 z-50">
+      <div className="max-w-7xl mx-auto flex justify-between items-center">
+        <Link to="/" className="text-2xl font-bold">
+          NexJudge
+        </Link>
+
+        <div className="flex items-center gap-4">
+          {isAuthenticated ? (
+            <>
+              <span className="text-gray-600">
+                Hello, {user?.name || 'User'}
+              </span>
+              <Link
+                to="/update-password"
+                className="text-gray-600 hover:text-gray-900"
+              >
+                Change Password
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="text-gray-600 hover:text-gray-900">
+                Login
+              </Link>
+              <Link
+                to="/signup"
+                className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800"
+              >
+                Sign Up
+              </Link>
+            </>
+          )}
+        </div>
+      </div>
+    </nav>
   );
 }

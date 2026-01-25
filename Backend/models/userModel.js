@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import validator from 'validator';
 import bcrypt from 'bcrypt';
+import AppError from '../utils/appError';
 
 const userSchema = mongoose.Schema({
   name: {
@@ -57,7 +58,7 @@ userSchema.methods.updatePassword = async function (updatedValue) {
     this.password,
   );
   if (!isSame) {
-    throw new Error('Current password do not match');
+    throw new AppError('Current password does not match', 401);
   }
   this.password = updatedValue.password;
   this.confirmPassword = updatedValue.confirmPassword;
@@ -71,10 +72,10 @@ userSchema.methods.resetPassword = async function ({
   confirmPassword,
 }) {
   if (otp.toString() !== this.verifyotp) {
-    throw new Error('Invalid OTP');
+    throw new AppError('Invalid OTP', 400);
   }
   if (this.verifyotpExpireAt < Date.now()) {
-    throw new Error('OTP expired');
+    throw new AppError('OTP expired', 400);
   }
 
   this.passwordChangedAt = Date.now() - 1000;

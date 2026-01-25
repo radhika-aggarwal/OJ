@@ -6,6 +6,7 @@ import Signup from './pages/Signup';
 import EmailVerify from './pages/EmailVerify';
 import ResetPassword from './pages/ResetPassword';
 import Navbar from './components/Navbar';
+import UpdatePassword from './pages/UpdatePassword';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route path="/signup" element={<Signup />}></Route>
         <Route path="/email-verify" element={<EmailVerify />}></Route>
         <Route path="/reset-password" element={<ResetPassword />}></Route>
+        <Route path="/update-password" element={<UpdatePassword />}></Route>
       </Routes>
     </>
   );
