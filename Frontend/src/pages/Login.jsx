@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { login as loginAPI } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { useAuth } from '../hooks/useAuth';
+import useAuth from '../hooks/useAuth';
 
 export default function Login() {
   const [email, setEmail] = useState('');

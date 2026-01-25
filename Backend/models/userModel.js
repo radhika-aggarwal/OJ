@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import validator from 'validator';
 import bcrypt from 'bcrypt';
-import AppError from '../utils/appError';
+import AppError from '../utils/appError.js';
 
 const userSchema = mongoose.Schema({
   name: {

@@ -62,6 +62,9 @@ export const login = async (req, res, next) => {
     const user = await User.findOne({ email: email.toLowerCase() }).select(
       '+password',
     );
+    if (!user) {
+      return next(new AppError('User does not exist', 400));
+    }
     if (!user || !(await user.comparePassword(password))) {
       return next(new AppError('Incorrect email or password', 401));
     }

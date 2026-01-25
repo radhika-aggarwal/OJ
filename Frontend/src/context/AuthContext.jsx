@@ -1,9 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
-import {
-  checkAuth,
-  logout as logoutAPI,
-  login as loginAPI,
-} from '../services/api';
+import { checkAuth, logout as logoutAPI } from '../services/api';
 
 const AuthContext = createContext();
 
@@ -29,9 +25,8 @@ export const AuthProvider = ({ children }) => {
     verifyUser();
   }, []);
 
-  const login = async (userData) => {
-    const res = await loginAPI(userData);
-    setUser(res.user);
+  const login = (userData) => {
+    setUser(userData);
     setIsAuthenticated(true);
   };
   const logout = async () => {
