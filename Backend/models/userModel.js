@@ -41,6 +41,11 @@ const userSchema = mongoose.Schema({
   resetotpExpireAt: { type: Number, default: 0 },
   passwordChangedAt: { type: Date },
   isPasswordChanged: { type: Boolean, default: false },
+  role: {
+    type: String,
+    enum: ['admin', 'user'],
+    default: 'user',
+  },
 });
 
 userSchema.pre('save', async function () {
