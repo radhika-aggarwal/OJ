@@ -43,21 +43,12 @@ export const createProblem = async (req, res, next) => {
       statement,
       difficulty,
       constraints,
-      sampleIO,
       timeLimit,
       memoryLimit,
     } = req.body;
 
-    if (
-      !title ||
-      !statement ||
-      !difficulty ||
-      !constraints ||
-      !sampleIO ||
-      !timeLimit ||
-      !memoryLimit
-    ) {
-      return next(new AppError('Missing fields', 400));
+    if (!title || !statement || !difficulty) {
+      return next(new AppError('Missing required fields', 400));
     }
     const existingProblem = await Problem.findOne({
       title: { $regex: new RegExp(`^${title}$`, 'i') },
@@ -69,14 +60,15 @@ export const createProblem = async (req, res, next) => {
       statement,
       difficulty,
       constraints,
-      sampleIO,
       timeLimit,
       memoryLimit,
     });
 
     res.status(201).json({
       status: 'success',
-      data: newProblem,
+      data: {
+        problem: newProblem,
+      },
     });
   } catch (err) {
     return next(new AppError(err.message, 400));

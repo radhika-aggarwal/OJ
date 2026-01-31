@@ -4,7 +4,7 @@ import useAuth from '../hooks/useAuth';
 import toast from 'react-hot-toast';
 
 export default function Navbar() {
-  const { isAuthenticated, user, logout, loading } = useAuth();
+  const { isAuthenticated, logout, loading } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -17,7 +17,7 @@ export default function Navbar() {
     return (
       <nav className="fixed top-0 left-0 right-0 bg-white shadow-sm p-4">
         <div className="max-w-7xl mx-auto">
-          <span className="text-2xl font-bold">NexJudge</span>
+          <span className="text-5xl font-bold">NexJudge</span>
         </div>
       </nav>
     );
@@ -33,9 +33,6 @@ export default function Navbar() {
         <div className="flex items-center gap-4">
           {isAuthenticated ? (
             <>
-              <span className="text-gray-600">
-                Hello, {user?.name || 'User'}
-              </span>
               <Link
                 to="/update-password"
                 className="text-gray-600 hover:text-gray-900"

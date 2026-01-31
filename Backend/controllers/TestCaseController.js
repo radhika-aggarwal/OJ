@@ -3,41 +3,51 @@ import AppError from '../utils/appError.js';
 import TestCase from '../models/testCaseModel.js';
 import Problem from '../models/problemModel.js';
 
-export const createTestCase = async (req, res, next) => {
+export const createTestCases = async (req, res, next) => {
   try {
-    const { problemId, stdin, stdout, visibility, executionNum } = req.body;
+    const { problemId, testCases } = req.body;
 
-    if (!problemId || !stdin || !stdout) {
+    if (!problemId || !Array.isArray(testCases) || testCases.length === 0) {
       return next(
-        new AppError('problemId, stdin, and stdout are required', 400),
+        new AppError(
+          'problemId and non-empty testCases array are required',
+          400,
+        ),
       );
     }
 
     const problem = await Problem.findById(problemId);
     if (!problem) return next(new AppError('Problem not found', 404));
 
-    let execNum = executionNum;
-    if (!execNum) {
-      const lastTestCase = await TestCase.find({ problemId })
-        .sort({ executionNum: -1 })
-        .limit(1);
-      execNum = lastTestCase.length ? lastTestCase[0].executionNum + 1 : 1;
-    }
+    const lastTestCase = await TestCase.findOne({ problemId })
+      .sort({ executionNum: -1 })
+      .select('executionNum');
 
-    const newTestCase = await TestCase.create({
-      problemId,
-      stdin,
-      stdout,
-      visibility: visibility || false,
-      executionNum: execNum,
+    let startExecutionNum = lastTestCase ? lastTestCase.executionNum + 1 : 1;
+
+    const formattedTestCases = testCases.map((tc, index) => {
+      if (!tc.stdin || !tc.stdout) {
+        throw new Error('Each test case must have stdin and stdout');
+      }
+
+      return {
+        problemId,
+        stdin: tc.stdin,
+        stdout: tc.stdout,
+        visibility: tc.visibility ?? false,
+        executionNum: startExecutionNum + index,
+      };
     });
+
+    const createdTestCases = await TestCase.insertMany(formattedTestCases);
 
     res.status(201).json({
       status: 'success',
-      data: newTestCase,
+      results: createdTestCases.length,
+      data: createdTestCases,
     });
   } catch (err) {
-    return next(new AppError(err.message, 400));
+    next(new AppError(err.message, 400));
   }
 };
 

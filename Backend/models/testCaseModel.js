@@ -20,7 +20,12 @@ const testCaseSchema = mongoose.Schema({
     type: Boolean,
     default: false,
   },
+
+  executionNum: {
+    type: Number,
+    required: true,
+  },
 });
 
-const TestCase = mongoose.model('TestCase', testCaseSchema);
-export default TestCase;
+const TestCases = mongoose.model('TestCase', testCaseSchema);
+export default TestCases;

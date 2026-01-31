@@ -62,3 +62,48 @@ export const checkAuth = async () => {
   const response = await api.get('/auth/is-auth');
   return response.data;
 };
+
+export const getAllProblems = async () => {
+  const response = await api.get('/problem');
+  return response.data;
+};
+
+export const getProblemById = async (id) => {
+  const response = await api.get(`/problem/${id}`);
+  return response.data;
+};
+
+export const getTestCasesByProblemId = async (id) => {
+  const response = await api.get(`/problem/testcases/${id}`);
+  return response.data;
+};
+
+export const createProblem = async (data) => {
+  const response = await api.post('/problem', data);
+  return response.data;
+};
+
+export const createManyTestCases = async (data) => {
+  const response = await api.post('/testcase', data);
+  return response.data;
+};
+
+export const updateProblem = async (id, data) => {
+  const response = await api.patch(`/problem/${id}`, data);
+  return response.data;
+};
+
+export const updateTestCase = async (id, data) => {
+  const response = await api.patch(`/testcase/${id}`, data);
+  return response.data;
+};
+
+export const deleteTestCase = async (id) => {
+  const response = await api.delete(`/testcase/${id}`);
+  return response.data;
+};
+
+export const deleteProblem = async (id) => {
+  const response = await api.delete(`problem/${id}`);
+  return response.data;
+};

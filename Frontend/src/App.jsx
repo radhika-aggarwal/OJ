@@ -7,6 +7,9 @@ import EmailVerify from './pages/EmailVerify';
 import ResetPassword from './pages/ResetPassword';
 import Navbar from './components/Navbar';
 import UpdatePassword from './pages/UpdatePassword';
+import ProblemPage from './pages/ProblemPage';
+import CreateProblemPage from './pages/CreateProblemPage';
+import UpdateProblemPage from './pages/UpdateProblemPage';
 
 function App() {
   return (
@@ -18,6 +21,12 @@ function App() {
         <Route path="/email-verify" element={<EmailVerify />}></Route>
         <Route path="/reset-password" element={<ResetPassword />}></Route>
         <Route path="/update-password" element={<UpdatePassword />}></Route>
+        <Route path="/problems/:id" element={<ProblemPage />} />
+        <Route path="/create-problem" element={<CreateProblemPage />} />
+        <Route
+          path="/updateproblem/:id"
+          element={<UpdateProblemPage />}
+        ></Route>
       </Routes>
     </>
   );

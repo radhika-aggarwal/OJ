@@ -12,7 +12,7 @@ export const AuthProvider = ({ children }) => {
     const verifyUser = async () => {
       try {
         const res = await checkAuth();
-        setUser(res.user);
+        setUser(res.data.user);
         setIsAuthenticated(true);
       } catch {
         setUser(null);

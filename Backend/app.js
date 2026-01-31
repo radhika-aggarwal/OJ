@@ -5,6 +5,8 @@ import cookieParser from 'cookie-parser';
 import { connectDB } from './database/db.js';
 import authRouter from './routes/authRoutes.js';
 import userRouter from './routes/userRoutes.js';
+import problemRouter from './routes/problemRoutes.js';
+import testCaseRouter from './routes/testCaseRoute.js';
 
 const app = express();
 connectDB();
@@ -20,7 +22,8 @@ app.use(express.json());
 app.use(cookieParser());
 app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);
-
+app.use('/api/problem', problemRouter);
+app.use('/api/testcase', testCaseRouter);
 // Global error handler
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;

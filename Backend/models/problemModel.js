@@ -26,13 +26,6 @@ const problemSchema = new mongoose.Schema(
       trim: true,
     },
 
-    sampleIO: [
-      {
-        input: String,
-        output: String,
-      },
-    ],
-
     timeLimit: {
       type: Number,
       default: 1000,
@@ -46,5 +39,5 @@ const problemSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-const Problem = mongoose.model('Problem', problemSchema);
-export default Problem;
+const Problems = mongoose.model('Problems', problemSchema);
+export default Problems;

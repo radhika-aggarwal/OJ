@@ -7,17 +7,21 @@ import {
   deleteProblem,
   getAllProblems,
 } from '../controllers/ProblemController.js';
+
+import { getTestCasesByProblem } from '../controllers/TestCaseController.js';
 import express from 'express';
 
 const router = express.Router();
 
-router.get('/problem/:id', protect, getProblem);
+router.get('/', protect, getAllProblems);
 
-router.post('/problem', protect, isAdmin, createProblem);
+router.get('/testcases/:problemId', protect, isAdmin, getTestCasesByProblem);
 
-router.patch('/problem/:id', protect, isAdmin, updateProblem);
+router.get('/:id', protect, getProblem);
 
-router.delete('/problem/:id', protect, isAdmin, deleteProblem);
+router.post('/', protect, isAdmin, createProblem);
 
-router.get('/problem', protect, getAllProblems);
+router.patch('/:id', protect, isAdmin, updateProblem);
+
+router.delete('/:id', protect, isAdmin, deleteProblem);
 export default router;

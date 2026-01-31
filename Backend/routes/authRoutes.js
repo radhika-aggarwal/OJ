@@ -17,11 +17,10 @@ const router = express.Router();
 router.post('/signup', signup);
 router.post('/login', login);
 router.patch('/update-password', protect, updatePassword);
-router.post('/logout', protect, logout); //remaining
+router.post('/logout', protect, logout);
 router.post('/send-verify-otp', protect, sendVerifyOTP);
 router.post('/verify-email', protect, verifyEmail);
 router.post('/forget-password', forgetPassword);
 router.patch('/reset-password', resetPassword);
-router.get('/is-auth', protect, isAuthenticated); //remaining
-
+router.get('/is-auth', protect, isAuthenticated);
 export default router;
