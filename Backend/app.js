@@ -7,6 +7,7 @@ import authRouter from './routes/authRoutes.js';
 import userRouter from './routes/userRoutes.js';
 import problemRouter from './routes/problemRoutes.js';
 import testCaseRouter from './routes/testCaseRoute.js';
+import submissionRouter from './routes/submissionRoutes.js';
 
 const app = express();
 connectDB();
@@ -20,10 +21,12 @@ app.use(
 );
 app.use(express.json());
 app.use(cookieParser());
+app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);
 app.use('/api/problem', problemRouter);
 app.use('/api/testcase', testCaseRouter);
+app.use('/api/submission', submissionRouter);
 // Global error handler
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;

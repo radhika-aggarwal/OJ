@@ -107,3 +107,8 @@ export const deleteProblem = async (id) => {
   const response = await api.delete(`problem/${id}`);
   return response.data;
 };
+
+export const submitCode = async (data) => {
+  const response = await api.post('submission/submit', data);
+  return response.data;
+};
