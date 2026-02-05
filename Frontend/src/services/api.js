@@ -112,3 +112,8 @@ export const submitCode = async (data) => {
   const response = await api.post('submission/submit', data);
   return response.data;
 };
+
+export const runCode = async (data) => {
+  const response = await api.post('submission/run', data);
+  return response.data;
+};

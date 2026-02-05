@@ -12,25 +12,27 @@ if (!fs.existsSync(dirOut)) {
   fs.mkdirSync(dirOut, { recursive: true });
 }
 
-export const executeCpp = async (filePath) => {
+export const executeCpp = async (filePath, inputPath) => {
   const jobId = path.basename(filePath).split('.')[0];
   const outputFileName = `${jobId}.out`;
   const outPath = path.join(dirOut, outputFileName);
 
   return new Promise((resolve, reject) => {
-    exec(
-      `g++ ${filePath} -o ${outPath} && cd ${dirOut} && ./${outputFileName}`,
-      (error, stdout, stderr) => {
-        if (error) {
-          reject(new Error(stderr || error.message));
-          return;
-        }
-        if (stderr) {
-          reject(new Error(stderr));
-          return;
-        }
-        resolve(stdout);
-      },
-    );
+    const compile = `g++ "${filePath}" -o "${outPath}"`;
+    const run = `cd "${dirOut}" && ./"${outputFileName}" < "${inputPath}"`;
+    const command = `${compile} && ${run}`;
+
+    exec(command, (error, stdout, stderr) => {
+      if (error) {
+        console.error('EXEC ERROR:', error.message);
+        reject(new Error(stderr || error.message));
+        return;
+      }
+      if (stderr) {
+        console.warn('STDERR:', stderr);
+      }
+
+      resolve(stdout);
+    });
   });
 };

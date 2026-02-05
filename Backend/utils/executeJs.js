@@ -5,24 +5,13 @@ import { exec as execCb } from 'child_process';
 import { promisify } from 'util';
 const exec = promisify(execCb);
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const dirOut = path.join(__dirname, '../outputs');
-if (!fs.existsSync(dirOut)) fs.mkdirSync(dirOut, { recursive: true });
-
-export const executeJs = async (filePath) => {
-  const jobId = path.basename(filePath).split('.')[0];
-  const outputFileName = `${jobId}.out`;
-  const outPath = path.join(dirOut, outputFileName);
-
+export const executeJs = async (filePath, inputPath) => {
   try {
-    const { stdout, stderr } = await exec(`node "${filePath}"`);
+    const { stdout, stderr } = await exec(
+      `node "${filePath}" < "${inputPath}"`,
+    );
 
-    if (stderr) console.warn('JavaScript runtime warning:', stderr);
-
-    fs.writeFileSync(outPath, stdout);
-
+    if (stderr) console.warn('JS runtime warning:', stderr);
     return stdout;
   } catch (err) {
     throw new Error(err.stderr || err.message);
