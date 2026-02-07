@@ -1,5 +1,5 @@
 import path from 'path';
-import fs from 'fs';
+
 import { fileURLToPath } from 'url';
 import { exec as execCb } from 'child_process';
 import { promisify } from 'util';

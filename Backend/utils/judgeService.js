@@ -1,6 +1,5 @@
-// CHECK IMPORTS CAREFULLY
-import { generateFile } from './generateFile.js'; // <-- Should come from generateFile.js
-import { generateInputFile } from './generateInputFile.js'; // <-- Should come from generateInputFile.js
+import { generateFile } from './generateFile.js'; 
+import { generateInputFile } from './generateInputFile.js'; 
 import { executeCpp } from './executeCpp.js';
 import { executeJs } from './executeJs.js';
 import { executePy } from './executePy.js';
@@ -8,7 +7,6 @@ import { executePy } from './executePy.js';
 export const judgeService = async (language, code, testCases) => {
   try {
     const filePath = await generateFile(language, code);
-    console.log('Code File Path:', filePath);
 
     const results = [];
     let finalVerdict = 'Accepted';

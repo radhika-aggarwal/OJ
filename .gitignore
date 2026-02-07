@@ -1,6 +1,10 @@
 # Node modules
 node_modules/
 
+outputs
+inputs
+codes
+
 # Environment variables
 .env
 .env.*
@@ -14,6 +18,3 @@ logs/
 .vscode/
 .idea/
 
-# Build folders (if any)
-dist/
-build/
