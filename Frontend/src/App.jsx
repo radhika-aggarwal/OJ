@@ -10,6 +10,7 @@ import UpdatePassword from './pages/UpdatePassword';
 import ProblemPage from './pages/ProblemPage';
 import CreateProblemPage from './pages/CreateProblemPage';
 import UpdateProblemPage from './pages/UpdateProblemPage';
+import Compiler from './pages/Compiler';
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
           path="/updateproblem/:id"
           element={<UpdateProblemPage />}
         ></Route>
+        <Route path="/compiler" element={<Compiler />}></Route>
       </Routes>
     </>
   );

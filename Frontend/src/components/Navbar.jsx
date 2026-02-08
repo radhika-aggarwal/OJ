@@ -34,6 +34,12 @@ export default function Navbar() {
           {isAuthenticated ? (
             <>
               <Link
+                to="/compiler"
+                className="text-gray-600 hover:text-gray-900 font-medium"
+              >
+                Compiler
+              </Link>
+              <Link
                 to="/update-password"
                 className="text-gray-600 hover:text-gray-900"
               >

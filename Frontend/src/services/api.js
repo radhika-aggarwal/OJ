@@ -117,3 +117,8 @@ export const runCode = async (data) => {
   const response = await api.post('submission/run', data);
   return response.data;
 };
+
+export const compiler = async (data) => {
+  const response = await api.post('compiler/submit', data);
+  return response.data;
+};

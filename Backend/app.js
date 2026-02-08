@@ -8,6 +8,7 @@ import userRouter from './routes/userRoutes.js';
 import problemRouter from './routes/problemRoutes.js';
 import testCaseRouter from './routes/testCaseRoute.js';
 import submissionRouter from './routes/submissionRoutes.js';
+import compilerRouter from './routes/compilerRoutes.js';
 
 const app = express();
 connectDB();
@@ -27,6 +28,7 @@ app.use('/api/user', userRouter);
 app.use('/api/problem', problemRouter);
 app.use('/api/testcase', testCaseRouter);
 app.use('/api/submission', submissionRouter);
+app.use('/api/compiler', compilerRouter);
 // Global error handler
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
