@@ -2,15 +2,49 @@ import React, { useState } from 'react';
 import Navbar from '../components/Navbar';
 import { compiler } from '../services/api';
 
-export default function Compiler() {
-  const [code, setCode] = useState('// Write your code here\n');
-  const [language, setLanguage] = useState('cpp');
-  const [customInput, setCustomInput] = useState('');
+{
+  /* Boilerplate Templates*/
+}
+const BOILERPLATES = {
+  cpp: `#include <iostream>
+using namespace std;
 
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(NULL);
+
+    // Write your code here
+
+    return 0;
+}
+`,
+  python: `def main():
+    # Write your code here
+    pass
+
+
+if __name__ == "__main__":
+    main()
+`,
+  js: `// Write your code here
+
+function main() {
+
+}
+
+main();
+`,
+};
+
+export default function Compiler() {
+  const [language, setLanguage] = useState('cpp');
+  const [code, setCode] = useState(BOILERPLATES.cpp);
+  const [customInput, setCustomInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isOutputOpen, setIsOutputOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [output, setOutput] = useState('');
+  const [hasUserEdited, setHasUserEdited] = useState(false);
 
   const handleRunCode = async () => {
     setIsProcessing(true);
@@ -22,9 +56,8 @@ export default function Compiler() {
       const response = await compiler({
         language,
         code,
-        input: customInput, 
+        input: customInput,
       });
-
       setOutput(response.output || '');
     } catch (err) {
       setErrorMessage(err.message || 'Compilation error');
@@ -33,107 +66,131 @@ export default function Compiler() {
     }
   };
 
+  const handleLanguageChange = (e) => {
+    const newLang = e.target.value;
+    setLanguage(newLang);
+
+    if (!hasUserEdited) {
+      setCode(BOILERPLATES[newLang]);
+    }
+  };
+
+  const resetCode = () => {
+    setCode(BOILERPLATES[language]);
+    setHasUserEdited(false);
+  };
+
   return (
-    <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
+    <div className="h-screen bg-gray-100 flex flex-col">
       <Navbar />
 
-      <div className="flex-1 flex pt-20">
-        {/* LEFT: CODE EDITOR */}
-        <div className="w-1/2 h-full flex flex-col border-r border-gray-200 bg-white">
-          {/* Header */}
-          <div className="h-12 bg-gray-100 border-b border-gray-200 flex items-center justify-between px-4">
-            <span className="text-xs font-bold text-gray-500 uppercase">
-              Compiler
-            </span>
+      <div className="flex-1 pt-20 px-6 pb-6">
+        <div className="h-full grid grid-cols-2 gap-6">
+          {/* LEFT: CODE EDITOR */}
+          <div className="flex flex-col bg-white rounded-xl shadow-md overflow-hidden">
+            {/* Toolbar */}
+            <div className="h-12 px-4 flex items-center justify-between border-b bg-gray-50">
+              <span className="text-xs font-semibold tracking-widest text-gray-500">
+                CODE
+              </span>
 
-            <select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              className="text-sm bg-white border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-blue-500 cursor-pointer"
-            >
-              <option value="cpp">C++</option>
-              <option value="python">Python</option>
-              <option value="js">JavaScript</option>
-            </select>
-          </div>
+              <div className="flex items-center gap-3">
+                <select
+                  value={language}
+                  onChange={handleLanguageChange}
+                  className="text-sm border rounded-md px-2 py-1 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                >
+                  <option value="cpp">C++</option>
+                  <option value="python">Python</option>
+                  <option value="js">JavaScript</option>
+                </select>
 
-          {/* Editor */}
-          <div className="flex-1 relative">
+                <button
+                  onClick={resetCode}
+                  className="px-4 py-1.5 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-500 disabled:opacity-50 transition"
+                >
+                  Reset
+                </button>
+
+                <button
+                  onClick={handleRunCode}
+                  disabled={isProcessing}
+                  className="px-4 py-1.5 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-500 disabled:opacity-50 transition"
+                >
+                  {isProcessing ? 'Running…' : 'Run Code'}
+                </button>
+              </div>
+            </div>
+
+            {/* Editor */}
             <textarea
               value={code}
-              onChange={(e) => setCode(e.target.value)}
-              className="w-full h-full p-4 font-mono text-sm text-gray-800 resize-none focus:outline-none"
+              onChange={(e) => {
+                setCode(e.target.value);
+                setHasUserEdited(true);
+              }}
               spellCheck="false"
               placeholder="// Write your code here..."
+              className="flex-1 p-4 font-mono text-sm bg-gray-50 focus:outline-none resize-none"
             />
           </div>
 
-          {/* Custom Input */}
-          <div className="p-3 bg-gray-50 border-t border-gray-200">
-            <div className="text-xs font-bold text-gray-500 uppercase mb-2">
-              Custom Input (stdin)
+          {/* RIGHT: INPUT + OUTPUT */}
+          <div className="flex flex-col gap-6">
+            {/* Input */}
+            <div className="bg-white rounded-xl shadow-md p-4">
+              <div className="text-xs font-semibold text-gray-500 tracking-widest mb-2">
+                INPUT
+              </div>
+              <textarea
+                value={customInput}
+                onChange={(e) => setCustomInput(e.target.value)}
+                placeholder="Custom input (stdin)"
+                className="w-full h-28 p-3 font-mono text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"
+              />
             </div>
-            <textarea
-              value={customInput}
-              onChange={(e) => setCustomInput(e.target.value)}
-              placeholder="Enter input here (optional)"
-              className="w-full h-24 p-3 font-mono text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500 resize-none"
-            />
-          </div>
 
-          {/* Actions */}
-          <div className="p-3 bg-white border-t border-gray-200 flex justify-end">
-            <button
-              onClick={handleRunCode}
-              disabled={isProcessing}
-              className="px-6 py-2 rounded bg-gray-800 text-white font-semibold hover:bg-gray-700 transition-colors disabled:opacity-50 text-sm"
-            >
-              {isProcessing ? 'Running...' : 'Run Code'}
-            </button>
-          </div>
-        </div>
+            {/* Output */}
+            <div className="flex-1 bg-gray-900 rounded-xl shadow-md overflow-hidden">
+              <div className="h-12 px-4 flex items-center border-b border-gray-700">
+                <span className="text-xs font-semibold tracking-widest text-gray-400">
+                  OUTPUT
+                </span>
 
-        {/* RIGHT: OUTPUT PANEL */}
-        <div className="w-1/2 h-full flex flex-col bg-white">
-          <div className="h-12 bg-gray-100 border-b border-gray-200 flex items-center px-4">
-            <span className="text-xs font-bold text-gray-500 uppercase">
-              Output
-            </span>
-
-            {isOutputOpen && (
-              <button
-                onClick={() => setIsOutputOpen(false)}
-                className="ml-auto text-gray-400 hover:text-gray-600"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-
-          <div className="flex-1 p-4 overflow-auto">
-            {!isOutputOpen && (
-              <div className="text-gray-400 text-sm">
-                Run code to see output.
+                {isOutputOpen && (
+                  <button
+                    onClick={() => setIsOutputOpen(false)}
+                    className="ml-auto text-gray-400 hover:text-gray-200"
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
-            )}
 
-            {errorMessage && (
-              <div className="mb-4 text-red-600 font-mono bg-red-50 p-3 rounded border border-red-200">
-                {errorMessage}
+              <div className="p-4 text-sm font-mono overflow-auto h-full">
+                {!isOutputOpen && (
+                  <div className="text-gray-500">Run code to see output.</div>
+                )}
+
+                {isProcessing && (
+                  <div className="text-yellow-400 animate-pulse">
+                    Executing...
+                  </div>
+                )}
+
+                {errorMessage && (
+                  <pre className="text-red-400 bg-red-900/30 p-3 rounded">
+                    {errorMessage}
+                  </pre>
+                )}
+
+                {output && (
+                  <pre className="text-green-400 whitespace-pre-wrap">
+                    {output}
+                  </pre>
+                )}
               </div>
-            )}
-
-            {output && (
-              <pre className="bg-black text-green-400 p-4 rounded font-mono text-sm whitespace-pre-wrap">
-                {output}
-              </pre>
-            )}
-
-            {isProcessing && (
-              <div className="animate-pulse text-gray-500">
-                Executing code...
-              </div>
-            )}
+            </div>
           </div>
         </div>
       </div>

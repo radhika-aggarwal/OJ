@@ -1,10 +1,11 @@
 import AppError from '../utils/appError.js';
 import TestCases from '../models/testCaseModel.js';
 import { judgeService } from '../utils/judgeService.js';
+import aiCodeReview from '../utils/aiCodeReview.js';
 
 export const submitCode = async (req, res, next) => {
   const { language, code, problemId } = req.body;
-  if (code == undefined) {
+  if (code == undefined || code.trim() === '') {
     return next(new AppError('Please add the code.', 400));
   }
   try {
@@ -22,7 +23,7 @@ export const submitCode = async (req, res, next) => {
 };
 export const runCode = async (req, res, next) => {
   const { language, code, problemId } = req.body;
-  if (code == undefined) {
+  if (code == undefined || code.trim() === '') {
     return next(new AppError('Please add the code.', 400));
   }
   try {
@@ -36,6 +37,22 @@ export const runCode = async (req, res, next) => {
     let result = await judgeService(language, code, testCase);
     res.status(200).json({
       results: result.results,
+    });
+  } catch (err) {
+    return next(new AppError(err.message, 500));
+  }
+};
+
+export const aiReview = async (req, res, next) => {
+  const { code } = req.body;
+  if (code == undefined || code.trim() === '') {
+    return next(new AppError('Please add the code.', 400));
+  }
+  try {
+    const review = await aiCodeReview(code);
+    return res.status(200).json({
+      success: true,
+      review,
     });
   } catch (err) {
     return next(new AppError(err.message, 500));

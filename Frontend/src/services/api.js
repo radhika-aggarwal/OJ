@@ -122,3 +122,8 @@ export const compiler = async (data) => {
   const response = await api.post('compiler/submit', data);
   return response.data;
 };
+
+export const aiReview = async (data) => {
+  const response = await api.post('submission/ai-review', data);
+  return response.data;
+};

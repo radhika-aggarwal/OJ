@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import {
@@ -6,7 +7,42 @@ import {
   getTestCasesByProblemId,
   submitCode,
   runCode,
+  aiReview,
 } from '../services/api';
+
+{
+  /* Boilerplate Templates*/
+}
+const BOILERPLATES = {
+  cpp: `#include <iostream>
+using namespace std;
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(NULL);
+
+    // Write your code here
+
+    return 0;
+}
+`,
+  python: `def main():
+    # Write your code here
+    pass
+
+
+if __name__ == "__main__":
+    main()
+`,
+  js: `// Write your code here
+
+function main() {
+
+}
+
+main();
+`,
+};
 
 export default function ProblemPage() {
   const { id } = useParams();
@@ -14,7 +50,7 @@ export default function ProblemPage() {
   const [testCases, setTestCases] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [code, setCode] = useState('// Write your code here\n');
+  const [code, setCode] = useState(BOILERPLATES.cpp);
   const [language, setLanguage] = useState('cpp');
 
   const [isProcessing, setIsProcessing] = useState(false);
@@ -25,6 +61,8 @@ export default function ProblemPage() {
   const [runResults, setRunResults] = useState([]);
   const [activeRunCaseId, setActiveRunCaseId] = useState(0);
   const [submissionData, setSubmissionData] = useState(null);
+  const [hasUserEdited, setHasUserEdited] = useState(false);
+  const [aiReviewResult, setAiReviewResult] = useState('');
 
   useEffect(() => {
     const fetchProblemData = async () => {
@@ -43,6 +81,20 @@ export default function ProblemPage() {
 
     fetchProblemData();
   }, [id]);
+
+  const handleLanguageChange = (e) => {
+    const newLang = e.target.value;
+    setLanguage(newLang);
+
+    if (!hasUserEdited) {
+      setCode(BOILERPLATES[newLang]);
+    }
+  };
+
+  const resetCode = () => {
+    setCode(BOILERPLATES[language]);
+    setHasUserEdited(false);
+  };
 
   const handleRun = async (e) => {
     e.preventDefault();
@@ -82,9 +134,47 @@ export default function ProblemPage() {
     }
   };
 
+  const handleAiReview = async () => {
+    setIsOutputOpen(true);
+    setActiveTab('ai-review');
+    setIsProcessing(true);
+    setErrorMessage('');
+
+    try {
+      const res = await aiReview({ code });
+      setAiReviewResult(res.review);
+    } catch (err) {
+      setErrorMessage(err.message || 'AI Review Failed');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   if (loading) return <div className="text-center mt-20">Loading...</div>;
   if (!problem)
     return <div className="text-center mt-20">Problem not found</div>;
+
+  const renderAiReviewContent = () => {
+    if (isProcessing) {
+      return (
+        <div className="animate-pulse text-gray-500">Getting AI Review...</div>
+      );
+    }
+
+    if (!aiReviewResult) {
+      return (
+        <div className="text-gray-400 text-sm">
+          Click “Get AI Review” to analyze your code.
+        </div>
+      );
+    }
+
+    return (
+      <div className="font-mono text-sm whitespace-pre-wrap text-gray-800">
+        <ReactMarkdown>{aiReviewResult}</ReactMarkdown>
+      </div>
+    );
+  };
 
   const renderVerdictContent = () => {
     if (isProcessing)
@@ -284,7 +374,9 @@ export default function ProblemPage() {
                   Input:
                 </div>
                 <div className="font-mono text-sm text-gray-800 mb-2">
-                  {tc.stdin || tc.input}
+                  <div className="font-mono text-sm text-gray-800 mb-2 whitespace-pre-line">
+                    {(tc.stdin || tc.input)?.replace(/\\n/g, '\n')}
+                  </div>
                 </div>
                 <div className="text-xs font-semibold text-gray-500 mb-1">
                   Output:
@@ -304,30 +396,50 @@ export default function ProblemPage() {
             <div className="text-xs font-bold text-gray-500 uppercase">
               Solution
             </div>
-            <select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              className="text-sm bg-white border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-blue-500 cursor-pointer"
-            >
-              <option value="cpp">C++</option>
-              <option value="python">Python</option>
-              <option value="js">JavaScript</option>
-            </select>
+            <div className="flex items-center gap-3">
+              <select
+                value={language}
+                onChange={handleLanguageChange}
+                className="text-sm bg-white border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-blue-500 cursor-pointer"
+              >
+                <option value="cpp">C++</option>
+                <option value="python">Python</option>
+                <option value="js">JavaScript</option>
+              </select>
+              <button
+                onClick={resetCode}
+                className="px-4 py-1.5 rounded-md text-gray text-sm font-medium hover:bg-blue-500 disabled:opacity-50 transition"
+              >
+                Reset
+              </button>
+            </div>
           </div>
 
           {/* Editor */}
           <div className="flex-1 relative">
             <textarea
               value={code}
-              onChange={(e) => setCode(e.target.value)}
+              onChange={(e) => {
+                setCode(e.target.value);
+                setHasUserEdited(true);
+              }}
               className="w-full h-full p-4 font-mono text-sm text-gray-800 resize-none focus:outline-none"
               spellCheck="false"
-              placeholder="// Write your code here..."
             />
           </div>
 
           {/* Buttons */}
           <div className="p-3 bg-white border-t border-gray-200 flex justify-end gap-3">
+            <button
+              onClick={handleAiReview}
+              disabled={isProcessing}
+              className="px-5 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-700 transition-colors disabled:opacity-50 text-sm"
+            >
+              {isProcessing && activeTab === 'ai-review'
+                ? 'Getting Reviewed...'
+                : 'Get AI Review'}
+            </button>
+
             <button
               onClick={handleRun}
               disabled={isProcessing}
@@ -355,7 +467,7 @@ export default function ProblemPage() {
             ${isOutputOpen ? 'h-72' : 'h-0 overflow-hidden'} 
           `}
           >
-            {/* Test Cases vs Verdict */}
+            {/* Test Cases vs Verdict Vs Ai Review */}
             <div className="flex items-center px-4 pt-2 bg-gray-100 border-b border-gray-200 select-none">
               <button
                 onClick={() => setActiveTab('testcases')}
@@ -379,6 +491,17 @@ export default function ProblemPage() {
               >
                 Verdict
               </button>
+              <button
+                onClick={() => setActiveTab('ai-review')}
+                className={`px-4 py-2 text-sm font-semibold rounded-t-lg transition-all
+                  ${
+                    activeTab === 'ai-review'
+                      ? 'bg-white text-gray-800 border-t border-l border-r border-gray-200 -mb-px'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+              >
+                AI-Review
+              </button>
 
               <button
                 onClick={() => setIsOutputOpen(false)}
@@ -397,6 +520,7 @@ export default function ProblemPage() {
 
               {activeTab === 'testcases' && renderTestCasesContent()}
               {activeTab === 'verdict' && renderVerdictContent()}
+              {activeTab === 'ai-review' && renderAiReviewContent()}
             </div>
           </div>
         </div>
