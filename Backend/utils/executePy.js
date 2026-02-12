@@ -12,11 +12,18 @@ export const executePy = async (filePath, inputPath) => {
   try {
     const { stdout, stderr } = await exec(
       `python3 "${filePath}" < "${inputPath}"`,
+      {
+        timeout: 5000, //5 seconds
+        maxBuffer: 1024 * 1024, // 1MB output limit
+      },
     );
 
     if (stderr) console.warn('Python runtime warning:', stderr);
     return stdout;
   } catch (err) {
+    if (err.killed && err.signal === 'SIGTERM') {
+      throw new Error('Execution timed out (possible infinite loop)');
+    }
     throw new Error(err.stderr || err.message);
   }
 };

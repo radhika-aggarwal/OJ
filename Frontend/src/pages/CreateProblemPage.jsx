@@ -191,6 +191,24 @@ export default function CreateProblemPage() {
                     className="w-full border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
                   />
                 </div>
+                <div className="flex items-center gap-2 mt-2">
+                  <input
+                    type="checkbox"
+                    checked={!tc.visibility}
+                    onChange={(e) =>
+                      handleTestCaseChange(
+                        index,
+                        'visibility',
+                        !e.target.checked,
+                      )
+                    }
+                    id={`hidden-${index}`}
+                    className="w-4 h-4"
+                  />
+                  <label htmlFor={`hidden-${index}`} className="text-sm">
+                    Hidden Test Case
+                  </label>
+                </div>
               </div>
             ))}
             <button

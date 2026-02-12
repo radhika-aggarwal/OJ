@@ -18,22 +18,43 @@ export const executeCpp = async (filePath, inputPath) => {
   const outputFileName = `${jobId}.out`;
   const outPath = path.join(dirOut, outputFileName);
 
+  // 1. Compile step
+  await new Promise((resolve, reject) => {
+    exec(
+      `g++ "${filePath}" -o "${outPath}"`,
+      { timeout: 3000 }, // compile timeout
+      (error, stdout, stderr) => {
+        if (error) {
+          reject(new Error(stderr || 'Compilation failed'));
+          return;
+        }
+        resolve();
+      },
+    );
+  });
+  // 2. Run step
   return new Promise((resolve, reject) => {
-    const compile = `g++ "${filePath}" -o "${outPath}"`;
-    const run = `cd "${dirOut}" && ./"${outputFileName}" < "${inputPath}"`;
-    const command = `${compile} && ${run}`;
+    exec(
+      `cd "${dirOut}" && ./"${outputFileName}" < "${inputPath}"`,
+      {
+        timeout: 5000, // runtime timeout
+        maxBuffer: 1024 * 1024, // output limit
+      },
+      (error, stdout, stderr) => {
+        if (error) {
+          // Time limit exceeded
+          if (error.killed && error.signal === 'SIGTERM') {
+            reject(new Error('Execution timed out (possible infinite loop)'));
+            return;
+          }
 
-    exec(command, (error, stdout, stderr) => {
-      if (error) {
-        console.error('EXEC ERROR:', error.message);
-        reject(new Error(stderr || error.message));
-        return;
-      }
-      if (stderr) {
-        console.warn('STDERR:', stderr);
-      }
+          reject(new Error(stderr || error.message));
+          return;
+        }
 
-      resolve(stdout);
-    });
+        if (stderr) console.warn('Runtime warning:', stderr);
+        resolve(stdout);
+      },
+    );
   });
 };

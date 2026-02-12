@@ -5,6 +5,19 @@ import { executeJs } from './executeJs.js';
 import { executePy } from './executePy.js';
 
 export const compilerService = async (language, code, input = '') => {
+  const ALLOWED_LANGUAGES = ['cpp', 'python', 'javascript', 'js'];
+
+  if (!ALLOWED_LANGUAGES.includes(language)) {
+    throw new Error('Unsupported language');
+  }
+
+  if (typeof code !== 'string' || code.trim() === '') {
+    throw new Error('Invalid code');
+  }
+
+  if (input !== undefined && typeof input !== 'string') {
+    throw new Error('Invalid input');
+  }
   try {
     const filePath = await generateFile(language, code);
     const inputFilePath = await generateInputFile(input);
