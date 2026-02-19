@@ -9,7 +9,6 @@ const aiCodeReview = async (code) => {
     contents: `Review the following code and provide a detailed analysis of the code. ${code}`,
   });
 
-  console.log(response.text);
   return response.text;
 };
 

@@ -1,5 +1,16 @@
 import mongoose from 'mongoose';
 
+const referenceSolutionSchema = new mongoose.Schema({
+  language: {
+    type: String,
+    required: true,
+  },
+  code: {
+    type: String,
+    required: true,
+  },
+});
+
 const problemSchema = new mongoose.Schema(
   {
     title: {
@@ -35,6 +46,8 @@ const problemSchema = new mongoose.Schema(
       type: Number,
       default: 256,
     },
+
+    referenceSolutions: [referenceSolutionSchema],
   },
   { timestamps: true },
 );

@@ -13,26 +13,29 @@ int main() {
     ios::sync_with_stdio(false);
     cin.tie(NULL);
 
-    // Write your code here
+    string line;
+    while(getline(cin, line)) {
+        cout << line << endl;
+    }
 
     return 0;
 }
 `,
-  python: `def main():
-    # Write your code here
-    pass
+  python: `import sys
 
-
-if __name__ == "__main__":
-    main()
+for line in sys.stdin:
+    print(line.strip())
 `,
-  js: `// Write your code here
+  js: `const readline = require('readline');
 
-function main() {
+const rl = readline.createInterface({
+  input: process.stdin,
+  terminal: false
+});
 
-}
-
-main();
+rl.on('line', (line) => {
+    console.log(line);
+});
 `,
 };
 
@@ -102,7 +105,7 @@ export default function Compiler() {
                 >
                   <option value="cpp">C++</option>
                   <option value="python">Python</option>
-                  <option value="js">JavaScript</option>
+                  <option value="javascript">JavaScript</option>
                 </select>
 
                 <button

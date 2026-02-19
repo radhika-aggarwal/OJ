@@ -25,6 +25,9 @@ export default function UpdateProblemPage() {
   const [testCases, setTestCases] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [referenceSolution, setReferenceSolution] = useState('');
+  const [referenceLanguage, setReferenceLanguage] = useState('cpp');
+
   useEffect(() => {
     const fetchProblemData = async () => {
       try {
@@ -36,6 +39,10 @@ export default function UpdateProblemPage() {
         setConstraints(problem.constraints || '');
         setTimeLimit(problem.timeLimit);
         setMemoryLimit(problem.memoryLimit);
+        if (problem.referenceSolutions?.length > 0) {
+          setReferenceLanguage(problem.referenceSolutions[0].language);
+          setReferenceSolution(problem.referenceSolutions[0].code);
+        }
 
         const testCaseRes = await getTestCasesByProblemId(id);
         setTestCases(testCaseRes.data); // all test cases
@@ -85,6 +92,12 @@ export default function UpdateProblemPage() {
         constraints,
         timeLimit,
         memoryLimit,
+        referenceSolutions: [
+          {
+            language: referenceLanguage,
+            code: referenceSolution,
+          },
+        ],
       });
 
       // Update or create test cases
@@ -188,6 +201,34 @@ export default function UpdateProblemPage() {
             </div>
           </div>
 
+          {/* Reference Solution */}
+          <div>
+            <h2 className="text-lg font-semibold mb-2">Reference Solution</h2>
+
+            <div className="mb-3">
+              <label className="block font-medium mb-1">Language</label>
+              <select
+                value={referenceLanguage}
+                onChange={(e) => setReferenceLanguage(e.target.value)}
+                className="w-full border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+              >
+                <option value="javascript">JavaScript</option>
+                <option value="python">Python</option>
+                <option value="cpp">C++</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block font-medium mb-1">Code</label>
+              <textarea
+                value={referenceSolution}
+                onChange={(e) => setReferenceSolution(e.target.value)}
+                rows={8}
+                className="w-full border px-3 py-2 rounded-lg font-mono focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            </div>
+          </div>
+
           {/* Test Cases */}
           <div>
             <h2 className="text-lg font-semibold mb-2">Test Cases</h2>
@@ -229,6 +270,24 @@ export default function UpdateProblemPage() {
                     }
                     className="w-full border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
                   />
+                </div>
+                <div className="flex items-center gap-2 mt-2">
+                  <input
+                    type="checkbox"
+                    checked={!tc.visibility}
+                    onChange={(e) =>
+                      handleTestCaseChange(
+                        index,
+                        'visibility',
+                        !e.target.checked,
+                      )
+                    }
+                    id={`hidden-${index}`}
+                    className="w-4 h-4"
+                  />
+                  <label htmlFor={`hidden-${index}`} className="text-sm">
+                    Hidden Test Case
+                  </label>
                 </div>
               </div>
             ))}

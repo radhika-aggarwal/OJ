@@ -8,12 +8,12 @@ const exec = promisify(execCb);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export const executePy = async (filePath, inputPath) => {
+export const executePy = async (filePath, inputPath, timeLimit) => {
   try {
     const { stdout, stderr } = await exec(
       `python3 "${filePath}" < "${inputPath}"`,
       {
-        timeout: 5000, //5 seconds
+        timeout: timeLimit, //5 seconds
         maxBuffer: 1024 * 1024, // 1MB output limit
       },
     );

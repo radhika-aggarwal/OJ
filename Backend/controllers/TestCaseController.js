@@ -16,7 +16,10 @@ export const createTestCases = async (req, res, next) => {
       );
     }
 
-    const problem = await Problem.findById(problemId);
+    const problem = await Problem.findById(problemId).select(
+      '-referenceSolutions',
+    );
+
     if (!problem) return next(new AppError('Problem not found', 404));
 
     const lastTestCase = await TestCase.findOne({ problemId })
@@ -34,7 +37,7 @@ export const createTestCases = async (req, res, next) => {
         problemId,
         stdin: tc.stdin,
         stdout: tc.stdout,
-        visibility: tc.visibility ?? false,
+        visibility: tc.visibility !== false,
         executionNum: startExecutionNum + index,
       };
     });
@@ -57,7 +60,10 @@ export const getTestCasesByProblem = async (req, res, next) => {
 
     if (!problemId) return next(new AppError('Problem ID is required', 400));
 
-    const problem = await Problem.findById(problemId);
+    const problem = await Problem.findById(problemId).select(
+      '-referenceSolutions',
+    );
+
     if (!problem) return next(new AppError('Problem not found', 404));
 
     const testCases = await TestCase.find({ problemId }).sort({

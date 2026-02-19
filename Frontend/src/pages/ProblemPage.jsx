@@ -21,26 +21,29 @@ int main() {
     ios::sync_with_stdio(false);
     cin.tie(NULL);
 
-    // Write your code here
+    string line;
+    while(getline(cin, line)) {
+        cout << line << endl;
+    }
 
     return 0;
 }
 `,
-  python: `def main():
-    # Write your code here
-    pass
+  python: `import sys
 
-
-if __name__ == "__main__":
-    main()
+for line in sys.stdin:
+    print(line.strip())
 `,
-  js: `// Write your code here
+  javascript: `const readline = require('readline');
 
-function main() {
+const rl = readline.createInterface({
+  input: process.stdin,
+  terminal: false
+});
 
-}
-
-main();
+rl.on('line', (line) => {
+    console.log(line);
+});
 `,
 };
 
@@ -52,6 +55,7 @@ export default function ProblemPage() {
 
   const [code, setCode] = useState(BOILERPLATES.cpp);
   const [language, setLanguage] = useState('cpp');
+  const [customInput, setCustomInput] = useState('');
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [isOutputOpen, setIsOutputOpen] = useState(false);
@@ -59,6 +63,7 @@ export default function ProblemPage() {
   const [errorMessage, setErrorMessage] = useState('');
 
   const [runResults, setRunResults] = useState([]);
+  const [customRunResults, setCustomRunResults] = useState([]);
   const [activeRunCaseId, setActiveRunCaseId] = useState(0);
   const [submissionData, setSubmissionData] = useState(null);
   const [hasUserEdited, setHasUserEdited] = useState(false);
@@ -71,7 +76,9 @@ export default function ProblemPage() {
         setProblem(problemRes.data.problem);
 
         const testCaseRes = await getTestCasesByProblemId(id);
-        setTestCases(testCaseRes.data.filter((tc) => tc.visibility === true));
+        setTestCases(
+          testCaseRes.data.data.filter((tc) => tc.visibility === true),
+        );
       } catch (err) {
         setErrorMessage(err.message);
       } finally {
@@ -96,18 +103,25 @@ export default function ProblemPage() {
     setHasUserEdited(false);
   };
 
-  const handleRun = async (e) => {
+  const handleRun = async (e, type = 'testcases') => {
     e.preventDefault();
     setIsProcessing(true);
     setIsOutputOpen(true);
-    setActiveTab('testcases');
+    setActiveTab(type);
     setErrorMessage('');
-    setRunResults([]);
+    if (type === 'testcases') setRunResults([]);
+    else setCustomRunResults([]);
     setActiveRunCaseId(0);
 
     try {
-      const response = await runCode({ language, code, problemId: id });
-      setRunResults(response.results || []);
+      const response = await runCode({
+        language,
+        code,
+        problemId: id,
+        customInput: type === 'custom' ? customInput : '',
+      });
+      if (type === 'custom') setCustomRunResults(response.results || []);
+      else setRunResults(response.results || []);
     } catch (err) {
       setErrorMessage(err.message || 'Error executing code');
     } finally {
@@ -172,6 +186,143 @@ export default function ProblemPage() {
     return (
       <div className="font-mono text-sm whitespace-pre-wrap text-gray-800">
         <ReactMarkdown>{aiReviewResult}</ReactMarkdown>
+      </div>
+    );
+  };
+  const renderCustomInputContent = () => {
+    return (
+      <div className="flex flex-col gap-4">
+        {/* Custom Input Textarea */}
+        <div className="flex-shrink-0">
+          <p className="text-xs text-gray-500 uppercase mb-2 font-semibold">
+            Custom Input
+          </p>
+          <textarea
+            value={customInput}
+            onChange={(e) => setCustomInput(e.target.value)}
+            placeholder="Enter your custom input here..."
+            className="w-full h-24 p-3 font-mono text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500 resize-none"
+          />
+          <button
+            onClick={(e) => handleRun(e, 'custom')}
+            disabled={isProcessing}
+            className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm disabled:opacity-50 font-medium"
+          >
+            {isProcessing ? 'Running...' : 'Run with Custom Input'}
+          </button>
+        </div>
+
+        {/* Results */}
+        <div className="overflow-auto">
+          {isProcessing && (
+            <div className="animate-pulse text-gray-500">Running code...</div>
+          )}
+
+          {!isProcessing && customRunResults.length === 0 && (
+            <div className="text-gray-400 text-sm">
+              Run code with custom input to see results.
+            </div>
+          )}
+
+          {!isProcessing && customRunResults.length > 0 && (
+            <div className="space-y-3 font-mono text-sm">
+              {(() => {
+                const result = customRunResults[0];
+                if (!result || typeof result !== 'object') {
+                  return (
+                    <div className="bg-red-50 p-3 rounded border border-red-200 text-red-600">
+                      <p className="font-semibold mb-2">Error</p>
+                      <p>Something went wrong. No result data available.</p>
+                    </div>
+                  );
+                }
+
+                const isError = result.error || result.status === 'Error';
+                const isAccepted = result.status === 'Accepted';
+
+                if (isError) {
+                  return (
+                    <div className="bg-red-50 p-3 rounded border border-red-200 text-red-600">
+                      <p className="font-semibold mb-2">
+                        {result.status === 'Error' ? 'Error' : 'Runtime Error'}
+                      </p>
+                      {result.error ||
+                        'An error occurred while running your code.'}
+                    </div>
+                  );
+                }
+
+                return (
+                  <>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase mb-1">
+                        Input
+                      </p>
+                      <div className="bg-white p-3 rounded border border-gray-200 text-gray-800 whitespace-pre-wrap">
+                        {result.input ?? '(no input)'}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase mb-1">
+                        Your Output
+                      </p>
+                      <div
+                        className={`p-3 rounded border border-gray-200 whitespace-pre-wrap ${
+                          isAccepted
+                            ? 'bg-white text-gray-800'
+                            : 'bg-red-50 text-red-600 border-red-200'
+                        }`}
+                      >
+                        {result.output ?? '(no output)'}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase mb-1">
+                        Expected Output
+                      </p>
+                      <div className="bg-green-50 p-3 rounded border border-green-200 text-green-800 whitespace-pre-wrap">
+                        {result.expected ?? '(no expected output)'}
+                      </div>
+                    </div>
+                    {/* If both outputs are empty, show a hint and raw outputs for debugging */}
+                    {(!result.output || result.output === '') &&
+                      (!result.expected || result.expected === '') &&
+                      !isError && (
+                        <div className="mt-3 text-sm text-gray-600">
+                          <p>
+                            No output was produced for this input. The reference
+                            solution or your code may expect a different input
+                            format.
+                          </p>
+                          <div className="mt-2 bg-gray-50 p-3 rounded border border-gray-200 font-mono text-xs text-gray-700">
+                            <p className="font-semibold">Raw user output:</p>
+                            <div className="whitespace-pre-wrap">
+                              {result.rawUserOutput ?? '(empty)'}
+                            </div>
+                            <p className="font-semibold mt-2">
+                              Raw reference output:
+                            </p>
+                            <div className="whitespace-pre-wrap">
+                              {result.rawRefOutput ?? '(empty)'}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    <div className="mt-4">
+                      <p
+                        className={`text-lg font-bold ${
+                          isAccepted ? 'text-green-600' : 'text-red-600'
+                        }`}
+                      >
+                        {isAccepted ? 'Accepted ✓' : 'Wrong Answer ✗'}
+                      </p>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          )}
+        </div>
       </div>
     );
   };
@@ -258,7 +409,15 @@ export default function ProblemPage() {
       <div className="flex flex-col h-full">
         <div className="flex gap-2 mb-4 border-b border-gray-200">
           {runResults.map((result, i) => {
-            const isPassed = result.status === 'Accepted';
+            const status =
+              result.status ||
+              ((result.output || result.userOutput)?.trim() ===
+              (result.expected || result.expectedOutput)?.trim()
+                ? 'Accepted'
+                : 'Wrong Answer');
+
+            const isPassed = status === 'Accepted';
+
             const isActive = activeRunCaseId === i;
 
             const textColor = isPassed ? 'text-green-600' : 'text-red-600';
@@ -306,13 +465,13 @@ export default function ProblemPage() {
                        : 'bg-red-50 text-red-600 border-red-200'
                    }`}
             >
-              {activeResult.output}
+              {activeResult.output || activeResult.userOutput}
             </div>
           </div>
           <div>
             <p className="text-xs text-gray-500 uppercase mb-1">Expected</p>
             <div className="bg-white p-3 rounded border border-gray-200 text-gray-800 whitespace-pre-wrap">
-              {activeResult.expected}
+              {activeResult.expected || activeResult.expectedOutput}
             </div>
           </div>
         </div>
@@ -373,10 +532,8 @@ export default function ProblemPage() {
                 <div className="text-xs font-semibold text-gray-500 mb-1">
                   Input:
                 </div>
-                <div className="font-mono text-sm text-gray-800 mb-2">
-                  <div className="font-mono text-sm text-gray-800 mb-2 whitespace-pre-line">
-                    {(tc.stdin || tc.input)?.replace(/\\n/g, '\n')}
-                  </div>
+                <div className="font-mono text-sm text-gray-800 mb-2 whitespace-pre-line">
+                  {(tc.stdin || tc.input)?.replace(/\\n/g, '\n')}
                 </div>
                 <div className="text-xs font-semibold text-gray-500 mb-1">
                   Output:
@@ -404,7 +561,7 @@ export default function ProblemPage() {
               >
                 <option value="cpp">C++</option>
                 <option value="python">Python</option>
-                <option value="js">JavaScript</option>
+                <option value="javascript">JavaScript</option>
               </select>
               <button
                 onClick={resetCode}
@@ -441,11 +598,12 @@ export default function ProblemPage() {
             </button>
 
             <button
-              onClick={handleRun}
+              onClick={(e) => handleRun(e, activeTab)}
               disabled={isProcessing}
               className="px-5 py-2 rounded bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition-colors disabled:opacity-50 text-sm"
             >
-              {isProcessing && activeTab === 'testcases'
+              {isProcessing &&
+              (activeTab === 'testcases' || activeTab === 'custom')
                 ? 'Running...'
                 : 'Run Code'}
             </button>
@@ -480,6 +638,18 @@ export default function ProblemPage() {
               >
                 Test Cases Result
               </button>
+              <button
+                onClick={() => setActiveTab('custom')}
+                className={`px-4 py-2 text-sm font-semibold rounded-t-lg transition-all
+    ${
+      activeTab === 'custom'
+        ? 'bg-white text-gray-800 border-t border-l border-r border-gray-200 -mb-px'
+        : 'text-gray-500 hover:text-gray-700'
+    }`}
+              >
+                Custom Input
+              </button>
+
               <button
                 onClick={() => setActiveTab('verdict')}
                 className={`px-4 py-2 text-sm font-semibold rounded-t-lg transition-all
@@ -521,6 +691,7 @@ export default function ProblemPage() {
               {activeTab === 'testcases' && renderTestCasesContent()}
               {activeTab === 'verdict' && renderVerdictContent()}
               {activeTab === 'ai-review' && renderAiReviewContent()}
+              {activeTab === 'custom' && renderCustomInputContent()}
             </div>
           </div>
         </div>

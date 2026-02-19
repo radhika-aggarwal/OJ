@@ -3,12 +3,12 @@ import { exec as execCb } from 'child_process';
 import { promisify } from 'util';
 const exec = promisify(execCb);
 
-export const executeJs = async (filePath, inputPath) => {
+export const executeJs = async (filePath, inputPath, timeLimit) => {
   try {
     const { stdout, stderr } = await exec(
       `node "${filePath}" < "${inputPath}"`,
       {
-        timeout: 5000, //  5 seconds
+        timeout: timeLimit, //  5 seconds
         maxBuffer: 1024 * 1024, // 1MB output limit
       },
     );

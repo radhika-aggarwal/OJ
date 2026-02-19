@@ -8,6 +8,7 @@ export const getProblem = async (req, res, next) => {
   }
   try {
     const problem = await Problem.findById(id);
+
     if (!problem) {
       return next(new AppError('Problem not found', 404));
     }
@@ -45,6 +46,7 @@ export const createProblem = async (req, res, next) => {
       constraints,
       timeLimit,
       memoryLimit,
+      referenceSolutions,
     } = req.body;
 
     if (!title || !statement || !difficulty) {
@@ -62,8 +64,8 @@ export const createProblem = async (req, res, next) => {
       constraints,
       timeLimit,
       memoryLimit,
+      referenceSolutions: referenceSolutions || [],
     });
-
     res.status(201).json({
       status: 'success',
       data: {
@@ -82,7 +84,10 @@ export const updateProblem = async (req, res, next) => {
       return next(new AppError('Problem id is missing', 400));
     }
 
-    const problem = await Problem.findById(problemId);
+    const problem = await Problem.findById(problemId).select(
+      '-referenceSolutions',
+    );
+
     if (!problem) {
       return next(new AppError('Problem not found', 404));
     }
@@ -96,6 +101,7 @@ export const updateProblem = async (req, res, next) => {
       'timeLimit',
       'memoryLimit',
       'tags',
+      'referenceSolutions',
     ];
 
     const updates = {};
@@ -126,7 +132,9 @@ export const deleteProblem = async (req, res, next) => {
       return next(new AppError('Problem ID is required', 400));
     }
 
-    const problem = await Problem.findById(problemId);
+    const problem = await Problem.findById(problemId).select(
+      '-referenceSolutions',
+    );
     if (!problem) {
       return next(new AppError('Problem not found', 404));
     }

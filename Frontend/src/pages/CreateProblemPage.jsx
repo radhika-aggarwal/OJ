@@ -12,6 +12,9 @@ export default function CreateProblemPage() {
   const [constraints, setConstraints] = useState('');
   const [timeLimit, setTimeLimit] = useState(1000);
   const [memoryLimit, setMemoryLimit] = useState(256);
+  const [referenceSolutions, setReferenceSolutions] = useState([
+    { language: 'cpp', code: '' },
+  ]);
 
   const [testCases, setTestCases] = useState([
     { stdin: '', stdout: '', visibility: true, executionNum: 1 },
@@ -52,6 +55,7 @@ export default function CreateProblemPage() {
         constraints,
         timeLimit,
         memoryLimit,
+        referenceSolutions,
       });
 
       const problemId = problemRes.data.problem._id;
@@ -145,6 +149,44 @@ export default function CreateProblemPage() {
                 value={memoryLimit}
                 onChange={(e) => setMemoryLimit(Number(e.target.value))}
                 className="w-full border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            </div>
+          </div>
+
+          {/* Reference Solution */}
+          <div>
+            <h2 className="text-lg font-semibold mb-2">Reference Solution</h2>
+
+            <div className="mb-2">
+              <label className="block font-medium mb-1">Language</label>
+              <select
+                value={referenceSolutions[0].language}
+                onChange={(e) =>
+                  setReferenceSolutions([
+                    { ...referenceSolutions[0], language: e.target.value },
+                  ])
+                }
+                className="w-full border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+              >
+                <option value="cpp">C++</option>
+                <option value="python">Python</option>
+                <option value="javascript">JavaScript</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block font-medium mb-1">Reference Code</label>
+              <textarea
+                value={referenceSolutions[0].code}
+                onChange={(e) =>
+                  setReferenceSolutions([
+                    { ...referenceSolutions[0], code: e.target.value },
+                  ])
+                }
+                rows={6}
+                required
+                className="w-full border px-3 py-2 rounded-lg font-mono focus:outline-none focus:ring-2 focus:ring-blue-400"
+                placeholder="Write the correct solution here..."
               />
             </div>
           </div>
