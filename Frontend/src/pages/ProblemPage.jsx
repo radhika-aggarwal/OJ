@@ -76,9 +76,8 @@ export default function ProblemPage() {
         setProblem(problemRes.data.problem);
 
         const testCaseRes = await getTestCasesByProblemId(id);
-        setTestCases(
-          testCaseRes.data.data.filter((tc) => tc.visibility === true),
-        );
+
+        setTestCases(testCaseRes.data.filter((tc) => tc.visibility === true));
       } catch (err) {
         setErrorMessage(err.message);
       } finally {
@@ -193,7 +192,7 @@ export default function ProblemPage() {
     return (
       <div className="flex flex-col gap-4">
         {/* Custom Input Textarea */}
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           <p className="text-xs text-gray-500 uppercase mb-2 font-semibold">
             Custom Input
           </p>
@@ -417,7 +416,7 @@ export default function ProblemPage() {
                 : 'Wrong Answer');
 
             const isPassed = status === 'Accepted';
-
+            const isRuntimeError = status === 'Runtime Error';
             const isActive = activeRunCaseId === i;
 
             const textColor = isPassed ? 'text-green-600' : 'text-red-600';
@@ -440,7 +439,7 @@ export default function ProblemPage() {
                 `}
               >
                 <span
-                  className={`w-2 h-2 rounded-full ${isActive ? dotColor : isPassed ? 'bg-green-400' : 'bg-red-400'}`}
+                  className={`w-2 h-2 rounded-full ${isActive ? dotColor : isPassed ? 'bg-green-400' : isRuntimeError ? 'bg-red-500' : 'bg-red-400'}`}
                 ></span>
                 Case {i + 1}
               </button>
@@ -465,7 +464,9 @@ export default function ProblemPage() {
                        : 'bg-red-50 text-red-600 border-red-200'
                    }`}
             >
-              {activeResult.output || activeResult.userOutput}
+              {activeResult.status === 'Runtime Error'
+                ? activeResult.error || 'Runtime Error'
+                : activeResult.output || activeResult.userOutput}
             </div>
           </div>
           <div>

@@ -11,11 +11,12 @@ const executeByLanguage = async (
   inputFilePath,
   timeLimit,
 ) => {
-  if (language === 'cpp') {
+  const lang = language.toLowerCase();
+  if (lang === 'cpp' || lang === 'c++') {
     return await executeCpp(filePath, inputFilePath, timeLimit);
-  } else if (language === 'python') {
+  } else if (lang === 'python' || lang === 'py') {
     return await executePy(filePath, inputFilePath, timeLimit);
-  } else if (language === 'javascript' || language === 'js') {
+  } else if (lang === 'javascript' || lang === 'js') {
     return await executeJs(filePath, inputFilePath, timeLimit);
   }
 };
@@ -32,26 +33,51 @@ export const judgeService = async ({
   let userFilePath;
   let inputFilePath;
   let refFilePath;
+  const filesToCleanup = [];
   try {
     userFilePath = await generateFile(language, code);
+    filesToCleanup.push(userFilePath);
 
     // CUSTOM INPUT MODE
     if (mode === 'run' && customInput.trim() !== '') {
       const processedCustomInput = customInput.replace(/\\n/g, '\n');
 
-      // Check if reference solution exists
+      // Normalize language for matching
+      const normalizeLang = (lang) => {
+        lang = lang.toLowerCase();
+        if (lang === 'c++') return 'cpp';
+        if (lang === 'py') return 'python';
+        if (lang === 'js') return 'javascript';
+        return lang;
+      };
       const refSolution = problem.referenceSolutions?.find(
-        (sol) => sol.language === language,
+        (sol) => normalizeLang(sol.language) === normalizeLang(language),
       );
 
+      // If no reference, still run user code and show output/error
       if (!refSolution) {
+        let userOut = '',
+          userError = null;
+        try {
+          const inPath = await generateInputFile(processedCustomInput);
+          filesToCleanup.push(inPath);
+          userOut = await executeByLanguage(
+            language,
+            userFilePath,
+            inPath,
+            timeLimit,
+          );
+        } catch (e) {
+          userError = e.message || String(e);
+        }
         return {
-          verdict: 'Error',
+          verdict: userError ? 'Runtime Error' : 'Accepted',
           results: [
             {
               input: processedCustomInput,
-              error: 'No reference solution available for this language',
-              status: 'Error',
+              output: userOut,
+              error: userError,
+              status: userError ? 'Runtime Error' : 'Accepted',
             },
           ],
         };
@@ -61,6 +87,7 @@ export const judgeService = async ({
       // Returns raw outputs and any errors encountered.
       const runBoth = async (inputStr) => {
         const inPath = await generateInputFile(inputStr);
+        filesToCleanup.push(inPath);
         let refOut = '';
         let userOut = '';
         let refError = null;
@@ -68,6 +95,7 @@ export const judgeService = async ({
 
         try {
           const refPath = await generateFile(language, refSolution.code);
+          filesToCleanup.push(refPath);
           refOut = await executeByLanguage(
             language,
             refPath,
@@ -102,8 +130,8 @@ export const judgeService = async ({
         let cleanUserOutput = (rawUser || '').trim().replace(/\r\n/g, '\n');
         let cleanRefOutput = (rawRef || '').trim().replace(/\r\n/g, '\n');
 
-        // Normalize outputs for comparison: if the input starts with a number (n),
-        // strip that leading number from the user's output when comparing.
+        // Output normalization: Only apply if problem requires (currently always on)
+        // To disable, comment out this block
         const firstToken =
           (processedCustomInput.split('\n')[0] || '').trim().split(/\s+/)[0] ||
           '';
@@ -113,7 +141,7 @@ export const judgeService = async ({
           normalizedUserOutput.startsWith(firstToken)
         ) {
           normalizedUserOutput = normalizedUserOutput
-            .replace(new RegExp('^' + firstToken + '\\s*'), '')
+            .replace(new RegExp('^' + firstToken + '\s*'), '')
             .trim();
         }
 
@@ -193,12 +221,13 @@ export const judgeService = async ({
               expected: cleanRefOutput,
               rawUserOutput: rawUser,
               rawRefOutput: rawRef,
-              // normalization used for comparison
               normalizedOutput: normalizedUserOutput,
               hint: echoedInputHint
                 ? 'Your program appears to echo the input. Check your algorithm.'
                 : undefined,
               status,
+              userError,
+              refError,
             },
           ],
         };
@@ -218,7 +247,8 @@ export const judgeService = async ({
 
     // SUBMIT MODE (run against DB test cases)
     const results = [];
-    let finalVerdict = 'Accepted';
+    let hasRuntimeError = false;
+    let hasWrongAnswer = false;
 
     for (const tc of testCases) {
       const input = tc.stdin || tc.input || '';
@@ -227,13 +257,14 @@ export const judgeService = async ({
       // Handle escaped newlines in test case input
       const processedInput = input.replace(/\\n/g, '\n');
 
-      inputFilePath = await generateInputFile(processedInput);
+      const tcInputFilePath = await generateInputFile(processedInput);
+      filesToCleanup.push(tcInputFilePath);
 
       try {
         const output = await executeByLanguage(
           language,
           userFilePath,
-          inputFilePath,
+          tcInputFilePath,
           timeLimit,
         );
 
@@ -248,7 +279,8 @@ export const judgeService = async ({
         let normalizedTcOutput = cleanOutput;
         if (
           /^\d+$/.test(firstTokenTc) &&
-          normalizedTcOutput.startsWith(firstTokenTc)
+          normalizedTcOutput.startsWith(firstTokenTc) &&
+          normalizedTcOutput !== firstTokenTc
         ) {
           normalizedTcOutput = normalizedTcOutput
             .replace(new RegExp('^' + firstTokenTc + '\\s*'), '')
@@ -262,7 +294,7 @@ export const judgeService = async ({
         let status = 'Accepted';
         if (normalizedTcOutput !== cleanExpected) {
           status = 'Wrong Answer';
-          if (finalVerdict === 'Accepted') finalVerdict = 'Wrong Answer';
+          hasWrongAnswer = true;
         }
 
         results.push({
@@ -276,13 +308,20 @@ export const judgeService = async ({
             : undefined,
         });
       } catch (err) {
-        finalVerdict = 'Runtime Error';
+        hasRuntimeError = true;
         results.push({
           status: 'Runtime Error',
           input: processedInput,
           error: err.message,
         });
       }
+    }
+
+    let finalVerdict = 'Accepted';
+    if (hasRuntimeError) {
+      finalVerdict = 'Runtime Error';
+    } else if (hasWrongAnswer) {
+      finalVerdict = 'Wrong Answer';
     }
 
     return { verdict: finalVerdict, results };
@@ -294,9 +333,9 @@ export const judgeService = async ({
     };
   } finally {
     try {
-      if (userFilePath) await fs.unlink(userFilePath);
-      if (inputFilePath) await fs.unlink(inputFilePath);
-      if (refFilePath) await fs.unlink(refFilePath);
+      for (const file of filesToCleanup) {
+        if (file) await fs.unlink(file).catch(() => {});
+      }
     } catch (err) {
       console.warn('Cleanup failed:', err.message);
     }

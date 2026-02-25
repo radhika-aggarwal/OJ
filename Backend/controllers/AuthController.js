@@ -20,6 +20,7 @@ const createWebToken = (user, statusCode, res) => {
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? 'none' : 'lax',
+    path: '/',
   };
 
   res.cookie('jwt', token, cookieOptions);

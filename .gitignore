@@ -13,6 +13,9 @@ codes
 logs/
 *.log
 
+# keys
+keys
+
 # OS and editor files
 .DS_Store
 .vscode/
