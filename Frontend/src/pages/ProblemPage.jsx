@@ -590,7 +590,7 @@ export default function ProblemPage() {
           <div
             className={`
     relative transition-all duration-300 ease-in-out
-    ${isOutputOpen ? 'flex-[0.5]' : 'flex-1'}
+    ${isOutputOpen ? 'h-1/2' : 'h-full'}
   `}
           >
             <textarea
@@ -610,7 +610,7 @@ export default function ProblemPage() {
             <button
               onClick={handleAiReview}
               disabled={isProcessing}
-              className="px-5 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-700 transition-colors disabled:opacity-50 text-sm"
+              className="px-5 py-2 rounded bg-purple-600 hover:bg-purple-700 text-white font-semibold  transition-colors disabled:opacity-50 text-sm"
             >
               {isProcessing && activeTab === 'ai-review'
                 ? 'Getting Reviewed...'
@@ -644,7 +644,7 @@ export default function ProblemPage() {
           <div
             className={`
             transition-all duration-300 ease-in-out bg-gray-50 border-t border-gray-300 flex flex-col
-            ${isOutputOpen ? 'h-72' : 'h-0 overflow-hidden'} 
+            ${isOutputOpen ? 'flex-[0.4]' : 'h-0 overflow-hidden'}
           `}
           >
             {/* Test Cases vs Verdict Vs Ai Review */}
