@@ -56,7 +56,7 @@ export default function ProblemPage() {
   const [customInput, setCustomInput] = useState('');
 
   const [isProcessing, setIsProcessing] = useState(false);
-  const [panelMode, setPanelMode] = useState('editor'); // 'editor' | 'output' | 'balanced'
+  const [panelMode, setPanelMode] = useState('editor');
   const [activeTab, setActiveTab] = useState('testcases');
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -66,6 +66,10 @@ export default function ProblemPage() {
   const [submissionData, setSubmissionData] = useState(null);
   const [hasUserEdited, setHasUserEdited] = useState(false);
   const [aiReviewResult, setAiReviewResult] = useState('');
+
+  // Store top-level error from run/submit responses
+  const [runError, setRunError] = useState(null);
+  const [submitError, setSubmitError] = useState(null);
 
   const textareaRef = useRef(null);
 
@@ -101,7 +105,6 @@ export default function ProblemPage() {
     setHasUserEdited(false);
   };
 
-  // Panel mode handlers
   const maximizeEditor = () => {
     setPanelMode('editor');
   };
@@ -111,7 +114,6 @@ export default function ProblemPage() {
   };
 
   const handleEditorFocus = () => {
-    // When user focuses on editor, maximize it
     if (panelMode === 'output') {
       setPanelMode('balanced');
     }
@@ -120,7 +122,6 @@ export default function ProblemPage() {
   const handleEditorChange = (e) => {
     setCode(e.target.value);
     setHasUserEdited(true);
-    // When user starts typing, maximize editor
     if (panelMode === 'output') {
       setPanelMode('editor');
     }
@@ -132,9 +133,10 @@ export default function ProblemPage() {
     const runType = type === 'custom' ? 'custom' : 'testcases';
 
     setIsProcessing(true);
-    maximizeOutput(); // Maximize output when running
+    maximizeOutput();
     setActiveTab(runType);
     setErrorMessage('');
+    setRunError(null);
 
     if (runType === 'testcases') {
       setRunResults([]);
@@ -152,6 +154,16 @@ export default function ProblemPage() {
         customInput: runType === 'custom' ? customInput : '',
       });
 
+      // Check if response indicates a top-level error (like language mismatch)
+      if (response.verdict === 'Error' && response.results?.length > 0) {
+        const firstResult = response.results[0];
+        if (firstResult.error && !firstResult.input) {
+          // This is a top-level error, not a test case error
+          setRunError(firstResult.error);
+          return;
+        }
+      }
+
       if (runType === 'custom') {
         setCustomRunResults(response.results || []);
       } else {
@@ -167,13 +179,26 @@ export default function ProblemPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsProcessing(true);
-    maximizeOutput(); // Maximize output when submitting
+    maximizeOutput();
     setActiveTab('verdict');
     setErrorMessage('');
+    setSubmitError(null);
     setSubmissionData(null);
 
     try {
       const response = await submitCode({ language, code, problemId: id });
+
+      // Check if response indicates a top-level error (like language mismatch)
+      if (response.verdict === 'Error' && response.results?.length > 0) {
+        const firstResult = response.results[0];
+        if (firstResult.error && !firstResult.input) {
+          // This is a top-level error, not a test case error
+          setSubmitError(firstResult.error);
+          setSubmissionData({ verdict: 'Error', results: [] });
+          return;
+        }
+      }
+
       setSubmissionData(response);
     } catch (err) {
       setErrorMessage(err.message || 'Submission failed');
@@ -184,7 +209,7 @@ export default function ProblemPage() {
   };
 
   const handleAiReview = async () => {
-    maximizeOutput(); // Maximize output when getting AI review
+    maximizeOutput();
     setActiveTab('ai-review');
     setIsProcessing(true);
     setErrorMessage('');
@@ -200,7 +225,6 @@ export default function ProblemPage() {
     }
   };
 
-  // Get dynamic styles based on panel mode
   const getEditorStyle = () => {
     switch (panelMode) {
       case 'editor':
@@ -287,13 +311,21 @@ export default function ProblemPage() {
             <div className="animate-pulse text-gray-500">Running code...</div>
           )}
 
-          {!isProcessing && customRunResults.length === 0 && (
+          {/* Show top-level run error */}
+          {!isProcessing && runError && (
+            <div className="bg-red-50 p-4 rounded border border-red-200 text-red-600">
+              <p className="font-semibold mb-2">Error</p>
+              <p className="font-mono text-sm">{runError}</p>
+            </div>
+          )}
+
+          {!isProcessing && !runError && customRunResults.length === 0 && (
             <div className="text-gray-400 text-sm">
               Run code with custom input to see results.
             </div>
           )}
 
-          {!isProcessing && customRunResults.length > 0 && (
+          {!isProcessing && !runError && customRunResults.length > 0 && (
             <div className="space-y-3 font-mono text-sm">
               {(() => {
                 const result = customRunResults[0];
@@ -306,17 +338,28 @@ export default function ProblemPage() {
                   );
                 }
 
-                const isError = result.error || result.status === 'Error';
+                const isError =
+                  result.error ||
+                  result.status === 'Error' ||
+                  result.status === 'Runtime Error';
                 const isAccepted = result.status === 'Accepted';
+                const isUnverified = result.status === 'Unverified';
+                const hasExpected =
+                  result.expected !== null &&
+                  result.expected !== undefined &&
+                  result.expected !== '(no expected output)' &&
+                  String(result.expected).trim() !== '';
 
                 if (isError) {
                   return (
                     <div className="bg-red-50 p-3 rounded border border-red-200 text-red-600">
                       <p className="font-semibold mb-2">
-                        {result.status === 'Error' ? 'Error' : 'Runtime Error'}
+                        {result.status || 'Error'}
                       </p>
-                      {result.error ||
-                        'An error occurred while running your code.'}
+                      <p>
+                        {result.error ||
+                          'An error occurred while running your code.'}
+                      </p>
                     </div>
                   );
                 }
@@ -336,10 +379,12 @@ export default function ProblemPage() {
                         Your Output
                       </p>
                       <div
-                        className={`p-3 rounded border border-gray-200 whitespace-pre-wrap ${
+                        className={`p-3 rounded border whitespace-pre-wrap ${
                           isAccepted
-                            ? 'bg-white text-gray-800'
-                            : 'bg-red-50 text-red-600 border-red-200'
+                            ? 'bg-white text-gray-800 border-gray-200'
+                            : isUnverified
+                              ? 'bg-yellow-50 text-yellow-800 border-yellow-200'
+                              : 'bg-red-50 text-red-600 border-red-200'
                         }`}
                       >
                         {result.output ?? '(no output)'}
@@ -349,18 +394,48 @@ export default function ProblemPage() {
                       <p className="text-xs text-gray-500 uppercase mb-1">
                         Expected Output
                       </p>
-                      <div className="bg-green-50 p-3 rounded border border-green-200 text-green-800 whitespace-pre-wrap">
-                        {result.expected ?? '(no expected output)'}
+                      <div
+                        className={`p-3 rounded border whitespace-pre-wrap ${
+                          hasExpected
+                            ? 'bg-green-50 text-green-800 border-green-200'
+                            : 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                        }`}
+                      >
+                        {hasExpected
+                          ? result.expected
+                          : result.note ||
+                            'No reference output available for this input.'}
                       </div>
                     </div>
+                    {result.refError && (
+                      <div className="bg-yellow-50 p-3 rounded border border-yellow-200 text-yellow-700 text-sm">
+                        <p className="font-semibold mb-1">
+                          Reference Solution Note:
+                        </p>
+                        <p>{result.refError}</p>
+                      </div>
+                    )}
                     <div className="mt-4">
                       <p
                         className={`text-lg font-bold ${
-                          isAccepted ? 'text-green-600' : 'text-red-600'
+                          isAccepted
+                            ? 'text-green-600'
+                            : isUnverified
+                              ? 'text-yellow-600'
+                              : 'text-red-600'
                         }`}
                       >
-                        {isAccepted ? 'Accepted ✓' : 'Wrong Answer ✗'}
+                        {isAccepted
+                          ? 'Accepted ✓'
+                          : isUnverified
+                            ? 'Unverified ⚠'
+                            : 'Wrong Answer ✗'}
                       </p>
+                      {isUnverified && result.note && (
+                        <p className="text-sm text-yellow-600 mt-1">
+                          {result.note}
+                        </p>
+                      )}
                     </div>
                   </>
                 );
@@ -375,6 +450,22 @@ export default function ProblemPage() {
   const renderVerdictContent = () => {
     if (isProcessing)
       return <div className="animate-pulse text-gray-500">Submitting...</div>;
+
+    // Show top-level submit error (like language mismatch)
+    if (submitError) {
+      return (
+        <div className="space-y-4">
+          <h3 className="text-xl font-bold text-red-600">Error</h3>
+          <div className="bg-red-50 p-4 rounded border border-red-200 text-red-600">
+            <p className="font-mono text-sm">{submitError}</p>
+          </div>
+          <p className="text-gray-500 text-sm">
+            Please make sure your code matches the selected language.
+          </p>
+        </div>
+      );
+    }
+
     if (!submissionData)
       return (
         <div className="text-gray-400 text-sm">Run submit to see verdict.</div>
@@ -382,6 +473,21 @@ export default function ProblemPage() {
 
     const tests = submissionData.results || submissionData.testResults || [];
     const verdict = submissionData.verdict || 'Unknown';
+
+    // Handle Error verdict with no valid test results
+    if (verdict === 'Error') {
+      const errorResult = tests.find((t) => t.error);
+      return (
+        <div className="space-y-4">
+          <h3 className="text-xl font-bold text-red-600">Error</h3>
+          {errorResult?.error && (
+            <div className="bg-red-50 p-4 rounded border border-red-200 text-red-600">
+              <p className="font-mono text-sm">{errorResult.error}</p>
+            </div>
+          )}
+        </div>
+      );
+    }
 
     if (tests.length === 0) {
       return (
@@ -398,6 +504,7 @@ export default function ProblemPage() {
       const status =
         typeof resultItem === 'object' ? resultItem.status : resultItem;
       const isPassed = status === 'Accepted';
+      const isError = status === 'Runtime Error' || resultItem.error;
 
       gridBoxes.push(
         <div
@@ -407,7 +514,7 @@ export default function ProblemPage() {
             transition-transform hover:scale-105 cursor-default
             ${isPassed ? 'bg-green-500' : 'bg-red-500'}
           `}
-          title={`Test Case ${i + 1}: ${status}`}
+          title={`Test Case ${i + 1}: ${status || (isError ? 'Error' : 'Failed')}`}
         >
           Test Case {i + 1}
         </div>,
@@ -438,6 +545,22 @@ export default function ProblemPage() {
   const renderTestCasesContent = () => {
     if (isProcessing)
       return <div className="animate-pulse text-gray-500">Running code...</div>;
+
+    // Show top-level run error (like language mismatch)
+    if (runError) {
+      return (
+        <div className="space-y-4">
+          <h3 className="text-xl font-bold text-red-600">Error</h3>
+          <div className="bg-red-50 p-4 rounded border border-red-200 text-red-600">
+            <p className="font-mono text-sm">{runError}</p>
+          </div>
+          <p className="text-gray-500 text-sm">
+            Please make sure your code matches the selected language.
+          </p>
+        </div>
+      );
+    }
+
     if (runResults.length === 0)
       return (
         <div className="text-gray-400 text-sm">
@@ -448,10 +571,25 @@ export default function ProblemPage() {
     const activeResult = runResults[activeRunCaseId];
     if (!activeResult) return null;
 
+    // Check if this result is an error without input (top-level error)
+    if (activeResult.error && !activeResult.input) {
+      return (
+        <div className="space-y-4">
+          <h3 className="text-xl font-bold text-red-600">Error</h3>
+          <div className="bg-red-50 p-4 rounded border border-red-200 text-red-600">
+            <p className="font-mono text-sm">{activeResult.error}</p>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="flex flex-col h-full">
         <div className="flex gap-2 mb-4 border-b border-gray-200">
           {runResults.map((result, i) => {
+            // Skip results that are just errors without test case data
+            if (result.error && !result.input) return null;
+
             const status =
               result.status ||
               ((result.output || result.userOutput)?.trim() ===
@@ -495,7 +633,7 @@ export default function ProblemPage() {
           <div>
             <p className="text-xs text-gray-500 uppercase mb-1">Input</p>
             <div className="bg-white p-3 rounded border border-gray-200 text-gray-800 whitespace-pre-wrap">
-              {activeResult.input}
+              {activeResult.input ?? '(no input)'}
             </div>
           </div>
           <div>
@@ -510,13 +648,17 @@ export default function ProblemPage() {
             >
               {activeResult.status === 'Runtime Error'
                 ? activeResult.error || 'Runtime Error'
-                : activeResult.output || activeResult.userOutput}
+                : activeResult.output ||
+                  activeResult.userOutput ||
+                  '(no output)'}
             </div>
           </div>
           <div>
             <p className="text-xs text-gray-500 uppercase mb-1">Expected</p>
             <div className="bg-white p-3 rounded border border-gray-200 text-gray-800 whitespace-pre-wrap">
-              {activeResult.expected || activeResult.expectedOutput}
+              {activeResult.expected ||
+                activeResult.expectedOutput ||
+                '(no expected output)'}
             </div>
           </div>
         </div>
@@ -740,6 +882,9 @@ export default function ProblemPage() {
                     key={tab}
                     onClick={() => {
                       setActiveTab(tab);
+                      // Clear errors when switching tabs
+                      if (tab === 'testcases') setRunError(null);
+                      if (tab === 'verdict') setSubmitError(null);
                       if (panelMode === 'editor') {
                         setPanelMode('balanced');
                       }

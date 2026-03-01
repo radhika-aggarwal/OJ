@@ -1,5 +1,5 @@
 import { exec as execCb } from 'child_process';
-
+import path from 'path';
 import { promisify } from 'util';
 const exec = promisify(execCb);
 
@@ -19,6 +19,10 @@ export const executeJs = async (filePath, inputPath, timeLimit) => {
     if (err.killed && err.signal === 'SIGTERM') {
       throw new Error('Execution timed out (possible infinite loop)');
     }
-    throw new Error(err.stderr || err.message);
+    const msg = (err.stderr || err.message || '').replace(
+      /\/[\w\-\/\.]+?\.(js|cjs|py|cpp)/g,
+      (m) => path.basename(m),
+    );
+    throw new Error(msg);
   }
 };

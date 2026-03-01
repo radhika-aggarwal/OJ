@@ -24,6 +24,10 @@ export const executePy = async (filePath, inputPath, timeLimit) => {
     if (err.killed && err.signal === 'SIGTERM') {
       throw new Error('Execution timed out (possible infinite loop)');
     }
-    throw new Error(err.stderr || err.message);
+    const msg = (err.stderr || err.message || '').replace(
+      /\/[\w\-\/\.]+?\.(py|cpp|cjs)/g,
+      (m) => path.basename(m),
+    );
+    throw new Error(msg);
   }
 };

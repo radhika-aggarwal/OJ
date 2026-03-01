@@ -23,7 +23,13 @@ export const executeCpp = async (filePath, inputPath, timeLimit) => {
       timeout: timeLimit,
     });
   } catch (error) {
-    throw new Error(error.stderr || 'Compilation failed');
+    // strip any absolute paths before surfacing to client
+    let msg = error.stderr || 'Compilation failed';
+    // Remove /app/codes/xxxx.cpp and similar
+    msg = msg.replace(/\/app\/codes\/[\w\-]+\.cpp/g, (m) => path.basename(m));
+    // Remove any other absolute .cpp paths
+    msg = msg.replace(/\/[\w\-\/\.]+?\.cpp/g, (m) => path.basename(m));
+    throw new Error(msg);
   }
 
   // Run step
@@ -41,7 +47,15 @@ export const executeCpp = async (filePath, inputPath, timeLimit) => {
               reject(new Error('Execution timed out (possible infinite loop)'));
               return;
             }
-            reject(new Error(stderr || error.message));
+            const errorMsg = stderr || error.message;
+            // sanitize any file paths leaking from runtime
+            let clean = errorMsg.replace(/\/app\/codes\/[\w\-]+\.cpp/g, (m) =>
+              path.basename(m),
+            );
+            clean = clean.replace(/\/[\w\-\/\.]+?\.cpp/g, (m) =>
+              path.basename(m),
+            );
+            reject(new Error(clean));
             return;
           }
 
