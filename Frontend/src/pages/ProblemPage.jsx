@@ -563,10 +563,11 @@ export default function ProblemPage() {
         {/* RIGHT PANEL*/}
         <div className="w-1/2 h-full flex flex-col">
           {/* Header */}
-          <div className="h-12 bg-gray-100 border-b border-gray-200 flex items-center justify-between px-4">
+          <div className="h-12 shrink-0 bg-gray-100 border-b border-gray-200 flex items-center justify-between px-4">
             <div className="text-xs font-bold text-gray-500 uppercase">
               Solution
             </div>
+
             <div className="flex items-center gap-3">
               <select
                 value={language}
@@ -577,143 +578,125 @@ export default function ProblemPage() {
                 <option value="python">Python</option>
                 <option value="javascript">JavaScript</option>
               </select>
+
               <button
                 onClick={resetCode}
-                className="px-4 py-1.5 rounded-md text-gray text-sm font-medium hover:bg-blue-500 disabled:opacity-50 transition"
+                className="px-4 py-1.5 rounded-md text-gray-700 text-sm font-medium hover:bg-gray-200 transition"
               >
                 Reset
               </button>
             </div>
           </div>
 
-          {/* Editor */}
-          <div
-            className={`
-    relative transition-all duration-300 ease-in-out
-    ${isOutputOpen ? 'h-1/2' : 'h-full'}
-  `}
-          >
-            <textarea
-              value={code}
-              onClick={() => setIsOutputOpen(false)}
-              onChange={(e) => {
-                setCode(e.target.value);
-                setHasUserEdited(true);
-              }}
-              className="w-full h-full p-4 font-mono text-sm text-gray-800 resize-none focus:outline-none"
-              spellCheck="false"
-            />
-          </div>
-
-          {/* Buttons */}
-          <div className="p-3 bg-white border-t border-gray-200 flex justify-end gap-3">
-            <button
-              onClick={handleAiReview}
-              disabled={isProcessing}
-              className="px-5 py-2 rounded bg-purple-600 hover:bg-purple-700 text-white font-semibold  transition-colors disabled:opacity-50 text-sm"
+          {/* Editor + Output Container */}
+          <div className="flex flex-col flex-1 overflow-hidden">
+            {/* Editor */}
+            <div
+              className={`
+        transition-all duration-300 ease-in-out
+        ${isOutputOpen ? 'h-[60%]' : 'h-full'}
+      `}
             >
-              {isProcessing && activeTab === 'ai-review'
-                ? 'Getting Reviewed...'
-                : 'Get AI Review'}
-            </button>
-
-            <button
-              onClick={(e) =>
-                handleRun(e, activeTab === 'custom' ? 'custom' : 'testcases')
-              }
-              disabled={isProcessing || !code.trim()}
-              className="px-5 py-2 rounded bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition-colors disabled:opacity-50 text-sm"
-            >
-              {isProcessing &&
-              (activeTab === 'testcases' || activeTab === 'custom')
-                ? 'Running...'
-                : 'Run Code'}
-            </button>
-            <button
-              onClick={handleSubmit}
-              disabled={isProcessing}
-              className="px-5 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-700 transition-colors disabled:opacity-50 text-sm"
-            >
-              {isProcessing && activeTab === 'verdict'
-                ? 'Submitting...'
-                : 'Submit'}
-            </button>
-          </div>
-
-          {/* OUTPUT PANEL */}
-          <div
-            className={`
-            transition-all duration-300 ease-in-out bg-gray-50 border-t border-gray-300 flex flex-col
-            ${isOutputOpen ? 'flex-[0.4]' : 'h-0 overflow-hidden'}
-          `}
-          >
-            {/* Test Cases vs Verdict Vs Ai Review */}
-            <div className="flex items-center px-4 pt-2 bg-gray-100 border-b border-gray-200 select-none">
-              <button
-                onClick={() => setActiveTab('testcases')}
-                className={`px-4 py-2 text-sm font-semibold rounded-t-lg mr-2 transition-all
-                  ${
-                    activeTab === 'testcases'
-                      ? 'bg-white text-gray-800 border-t border-l border-r border-gray-200 -mb-px'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-              >
-                Test Cases Result
-              </button>
-              <button
-                onClick={() => setActiveTab('custom')}
-                className={`px-4 py-2 text-sm font-semibold rounded-t-lg transition-all
-    ${
-      activeTab === 'custom'
-        ? 'bg-white text-gray-800 border-t border-l border-r border-gray-200 -mb-px'
-        : 'text-gray-500 hover:text-gray-700'
-    }`}
-              >
-                Custom Input
-              </button>
-
-              <button
-                onClick={() => setActiveTab('verdict')}
-                className={`px-4 py-2 text-sm font-semibold rounded-t-lg transition-all
-                  ${
-                    activeTab === 'verdict'
-                      ? 'bg-white text-gray-800 border-t border-l border-r border-gray-200 -mb-px'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-              >
-                Verdict
-              </button>
-              <button
-                onClick={() => setActiveTab('ai-review')}
-                className={`px-4 py-2 text-sm font-semibold rounded-t-lg transition-all
-                  ${
-                    activeTab === 'ai-review'
-                      ? 'bg-white text-gray-800 border-t border-l border-r border-gray-200 -mb-px'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-              >
-                AI-Review
-              </button>
-
-              <button
+              <textarea
+                value={code}
                 onClick={() => setIsOutputOpen(false)}
-                className="ml-auto text-gray-400 hover:text-gray-600 mb-1"
+                onChange={(e) => {
+                  setCode(e.target.value);
+                  setHasUserEdited(true);
+                }}
+                className="w-full h-full p-4 font-mono text-sm text-gray-800 resize-none focus:outline-none"
+                spellCheck="false"
+              />
+            </div>
+
+            {/* Buttons */}
+            <div className="shrink-0 p-3 bg-white border-t border-gray-200 flex justify-end gap-3">
+              <button
+                onClick={handleAiReview}
+                disabled={isProcessing}
+                className="px-5 py-2 rounded bg-purple-600 hover:bg-purple-700 text-white font-semibold transition disabled:opacity-50 text-sm"
               >
-                ✕
+                {isProcessing && activeTab === 'ai-review'
+                  ? 'Getting Reviewed...'
+                  : 'Get AI Review'}
+              </button>
+
+              <button
+                onClick={(e) =>
+                  handleRun(e, activeTab === 'custom' ? 'custom' : 'testcases')
+                }
+                disabled={isProcessing || !code.trim()}
+                className="px-5 py-2 rounded bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition disabled:opacity-50 text-sm"
+              >
+                {isProcessing &&
+                (activeTab === 'testcases' || activeTab === 'custom')
+                  ? 'Running...'
+                  : 'Run Code'}
+              </button>
+
+              <button
+                onClick={handleSubmit}
+                disabled={isProcessing}
+                className="px-5 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-700 transition disabled:opacity-50 text-sm"
+              >
+                {isProcessing && activeTab === 'verdict'
+                  ? 'Submitting...'
+                  : 'Submit'}
               </button>
             </div>
 
-            <div className="flex-1 overflow-auto p-4 bg-white">
-              {errorMessage && (
-                <div className="text-red-600 font-mono bg-red-50 p-3 rounded border border-red-200 mb-3">
-                  {errorMessage}
-                </div>
-              )}
+            {/* OUTPUT PANEL */}
+            <div
+              className={`
+        transition-all duration-300 ease-in-out
+        bg-gray-50 border-t border-gray-300 flex flex-col overflow-hidden
+        ${isOutputOpen ? 'h-[40%]' : 'h-0'}
+      `}
+            >
+              {/* Tabs */}
+              <div className="flex items-center px-4 pt-2 bg-gray-100 border-b border-gray-200">
+                {['testcases', 'custom', 'verdict', 'ai-review'].map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`px-4 py-2 text-sm font-semibold rounded-t-lg mr-2 transition
+              ${
+                activeTab === tab
+                  ? 'bg-white text-gray-800 border-t border-l border-r border-gray-200 -mb-px'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+                  >
+                    {tab === 'testcases'
+                      ? 'Test Cases Result'
+                      : tab === 'custom'
+                        ? 'Custom Input'
+                        : tab === 'verdict'
+                          ? 'Verdict'
+                          : 'AI Review'}
+                  </button>
+                ))}
 
-              {activeTab === 'testcases' && renderTestCasesContent()}
-              {activeTab === 'verdict' && renderVerdictContent()}
-              {activeTab === 'ai-review' && renderAiReviewContent()}
-              {activeTab === 'custom' && renderCustomInputContent()}
+                <button
+                  onClick={() => setIsOutputOpen(false)}
+                  className="ml-auto text-gray-400 hover:text-gray-600 mb-1"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 overflow-auto p-4 bg-white">
+                {errorMessage && (
+                  <div className="text-red-600 font-mono bg-red-50 p-3 rounded border border-red-200 mb-3">
+                    {errorMessage}
+                  </div>
+                )}
+
+                {activeTab === 'testcases' && renderTestCasesContent()}
+                {activeTab === 'verdict' && renderVerdictContent()}
+                {activeTab === 'ai-review' && renderAiReviewContent()}
+                {activeTab === 'custom' && renderCustomInputContent()}
+              </div>
             </div>
           </div>
         </div>
