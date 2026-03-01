@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
@@ -10,9 +10,7 @@ import {
   aiReview,
 } from '../services/api';
 
-{
-  /* Boilerplate Templates*/
-}
+// Boilerplate Templates
 const BOILERPLATES = {
   cpp: `#include <iostream>
 using namespace std;
@@ -58,7 +56,7 @@ export default function ProblemPage() {
   const [customInput, setCustomInput] = useState('');
 
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isOutputOpen, setIsOutputOpen] = useState(false);
+  const [panelMode, setPanelMode] = useState('editor'); // 'editor' | 'output' | 'balanced'
   const [activeTab, setActiveTab] = useState('testcases');
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -69,6 +67,8 @@ export default function ProblemPage() {
   const [hasUserEdited, setHasUserEdited] = useState(false);
   const [aiReviewResult, setAiReviewResult] = useState('');
 
+  const textareaRef = useRef(null);
+
   useEffect(() => {
     const fetchProblemData = async () => {
       try {
@@ -76,7 +76,6 @@ export default function ProblemPage() {
         setProblem(problemRes.data.problem);
 
         const testCaseRes = await getTestCasesByProblemId(id);
-
         setTestCases(testCaseRes.data.filter((tc) => tc.visibility === true));
       } catch (err) {
         setErrorMessage(err.message);
@@ -102,14 +101,38 @@ export default function ProblemPage() {
     setHasUserEdited(false);
   };
 
+  // Panel mode handlers
+  const maximizeEditor = () => {
+    setPanelMode('editor');
+  };
+
+  const maximizeOutput = () => {
+    setPanelMode('output');
+  };
+
+  const handleEditorFocus = () => {
+    // When user focuses on editor, maximize it
+    if (panelMode === 'output') {
+      setPanelMode('balanced');
+    }
+  };
+
+  const handleEditorChange = (e) => {
+    setCode(e.target.value);
+    setHasUserEdited(true);
+    // When user starts typing, maximize editor
+    if (panelMode === 'output') {
+      setPanelMode('editor');
+    }
+  };
+
   const handleRun = async (e, type = 'testcases') => {
     e.preventDefault();
 
-    // Ensure only valid types are used
     const runType = type === 'custom' ? 'custom' : 'testcases';
 
     setIsProcessing(true);
-    setIsOutputOpen(true);
+    maximizeOutput(); // Maximize output when running
     setActiveTab(runType);
     setErrorMessage('');
 
@@ -144,7 +167,7 @@ export default function ProblemPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsProcessing(true);
-    setIsOutputOpen(true);
+    maximizeOutput(); // Maximize output when submitting
     setActiveTab('verdict');
     setErrorMessage('');
     setSubmissionData(null);
@@ -161,10 +184,11 @@ export default function ProblemPage() {
   };
 
   const handleAiReview = async () => {
-    setIsOutputOpen(true);
+    maximizeOutput(); // Maximize output when getting AI review
     setActiveTab('ai-review');
     setIsProcessing(true);
     setErrorMessage('');
+    setAiReviewResult('');
 
     try {
       const res = await aiReview({ code });
@@ -173,6 +197,38 @@ export default function ProblemPage() {
       setErrorMessage(err.message || 'AI Review Failed');
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  // Get dynamic styles based on panel mode
+  const getEditorStyle = () => {
+    switch (panelMode) {
+      case 'editor':
+        return { flex: '1 1 auto', minHeight: '200px' };
+      case 'output':
+        return { flex: '0 0 120px', minHeight: '120px' };
+      case 'balanced':
+        return { flex: '1 1 50%', minHeight: '150px' };
+      default:
+        return { flex: '1 1 auto', minHeight: '200px' };
+    }
+  };
+
+  const getOutputStyle = () => {
+    switch (panelMode) {
+      case 'editor':
+        return {
+          flex: '0 0 0px',
+          minHeight: '0px',
+          opacity: 0,
+          overflow: 'hidden',
+        };
+      case 'output':
+        return { flex: '1 1 auto', minHeight: '200px', opacity: 1 };
+      case 'balanced':
+        return { flex: '1 1 50%', minHeight: '150px', opacity: 1 };
+      default:
+        return { flex: '0 0 0px', minHeight: '0px', opacity: 0 };
     }
   };
 
@@ -190,7 +246,7 @@ export default function ProblemPage() {
     if (!aiReviewResult) {
       return (
         <div className="text-gray-400 text-sm">
-          Click “Get AI Review” to analyze your code.
+          Click "Get AI Review" to analyze your code.
         </div>
       );
     }
@@ -201,6 +257,7 @@ export default function ProblemPage() {
       </div>
     );
   };
+
   const renderCustomInputContent = () => {
     return (
       <div className="flex flex-col gap-4">
@@ -296,30 +353,6 @@ export default function ProblemPage() {
                         {result.expected ?? '(no expected output)'}
                       </div>
                     </div>
-                    {/* If both outputs are empty, show a hint and raw outputs for debugging */}
-                    {(!result.output || result.output === '') &&
-                      (!result.expected || result.expected === '') &&
-                      !isError && (
-                        <div className="mt-3 text-sm text-gray-600">
-                          <p>
-                            No output was produced for this input. The reference
-                            solution or your code may expect a different input
-                            format.
-                          </p>
-                          <div className="mt-2 bg-gray-50 p-3 rounded border border-gray-200 font-mono text-xs text-gray-700">
-                            <p className="font-semibold">Raw user output:</p>
-                            <div className="whitespace-pre-wrap">
-                              {result.rawUserOutput ?? '(empty)'}
-                            </div>
-                            <p className="font-semibold mt-2">
-                              Raw reference output:
-                            </p>
-                            <div className="whitespace-pre-wrap">
-                              {result.rawRefOutput ?? '(empty)'}
-                            </div>
-                          </div>
-                        </div>
-                      )}
                     <div className="mt-4">
                       <p
                         className={`text-lg font-bold ${
@@ -360,10 +393,8 @@ export default function ProblemPage() {
 
     const gridBoxes = [];
 
-    // Loop through results
     for (let i = 0; i < tests.length; i++) {
       const resultItem = tests[i];
-      // Handle both object format and string format
       const status =
         typeof resultItem === 'object' ? resultItem.status : resultItem;
       const isPassed = status === 'Accepted';
@@ -498,6 +529,7 @@ export default function ProblemPage() {
       <Navbar />
 
       <div className="flex-1 flex pt-20 h-full">
+        {/* LEFT PANEL - Problem Description */}
         <div className="w-1/2 h-full overflow-y-auto border-r border-gray-200 bg-white p-6">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-2xl font-bold text-gray-800">
@@ -560,7 +592,7 @@ export default function ProblemPage() {
           </div>
         </div>
 
-        {/* RIGHT PANEL*/}
+        {/* RIGHT PANEL - Code Editor */}
         <div className="w-1/2 h-full flex flex-col">
           {/* Header */}
           <div className="h-12 shrink-0 bg-gray-100 border-b border-gray-200 flex items-center justify-between px-4">
@@ -590,81 +622,134 @@ export default function ProblemPage() {
 
           {/* Editor + Output Container */}
           <div className="flex flex-col flex-1 overflow-hidden">
-            {/* Editor */}
+            {/* Editor - Dynamic Height */}
             <div
-              className={`
-        transition-all duration-300 ease-in-out
-        ${isOutputOpen ? 'h-[60%]' : 'h-full'}
-      `}
+              className="transition-all duration-300 ease-in-out overflow-hidden"
+              style={getEditorStyle()}
             >
               <textarea
+                ref={textareaRef}
                 value={code}
-                onClick={() => setIsOutputOpen(false)}
-                onChange={(e) => {
-                  setCode(e.target.value);
-                  setHasUserEdited(true);
-                }}
-                className="w-full h-full p-4 font-mono text-sm text-gray-800 resize-none focus:outline-none"
+                onFocus={handleEditorFocus}
+                onChange={handleEditorChange}
+                className="w-full h-full p-4 font-mono text-sm text-gray-800 resize-none focus:outline-none border border-gray-200 rounded bg-white"
                 spellCheck="false"
+                placeholder="Write your code here..."
               />
             </div>
 
-            {/* Buttons */}
-            <div className="shrink-0 p-3 bg-white border-t border-gray-200 flex justify-end gap-3">
-              <button
-                onClick={handleAiReview}
-                disabled={isProcessing}
-                className="px-5 py-2 rounded bg-purple-600 hover:bg-purple-700 text-white font-semibold transition disabled:opacity-50 text-sm"
-              >
-                {isProcessing && activeTab === 'ai-review'
-                  ? 'Getting Reviewed...'
-                  : 'Get AI Review'}
-              </button>
+            {/* Action Buttons */}
+            <div className="shrink-0 p-3 bg-white border-t border-gray-200 flex flex-wrap justify-between items-center gap-3">
+              {/* Left side - Panel toggle */}
+              <div className="flex items-center gap-2">
+                {panelMode !== 'editor' && (
+                  <button
+                    onClick={maximizeEditor}
+                    className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition flex items-center gap-1"
+                    title="Maximize Editor"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 15l7-7 7 7"
+                      />
+                    </svg>
+                    Editor
+                  </button>
+                )}
+                {panelMode !== 'output' && (
+                  <button
+                    onClick={maximizeOutput}
+                    className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition flex items-center gap-1"
+                    title="Maximize Output"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                    Output
+                  </button>
+                )}
+              </div>
 
-              <button
-                onClick={(e) =>
-                  handleRun(e, activeTab === 'custom' ? 'custom' : 'testcases')
-                }
-                disabled={isProcessing || !code.trim()}
-                className="px-5 py-2 rounded bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition disabled:opacity-50 text-sm"
-              >
-                {isProcessing &&
-                (activeTab === 'testcases' || activeTab === 'custom')
-                  ? 'Running...'
-                  : 'Run Code'}
-              </button>
+              {/* Right side - Action buttons */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleAiReview}
+                  disabled={isProcessing}
+                  className="px-5 py-2 rounded bg-purple-600 hover:bg-purple-700 text-white font-semibold transition disabled:opacity-50 text-sm"
+                >
+                  {isProcessing && activeTab === 'ai-review'
+                    ? 'Getting Reviewed...'
+                    : 'Get AI Review'}
+                </button>
 
-              <button
-                onClick={handleSubmit}
-                disabled={isProcessing}
-                className="px-5 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-700 transition disabled:opacity-50 text-sm"
-              >
-                {isProcessing && activeTab === 'verdict'
-                  ? 'Submitting...'
-                  : 'Submit'}
-              </button>
+                <button
+                  onClick={(e) =>
+                    handleRun(
+                      e,
+                      activeTab === 'custom' ? 'custom' : 'testcases',
+                    )
+                  }
+                  disabled={isProcessing || !code.trim()}
+                  className="px-5 py-2 rounded bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition disabled:opacity-50 text-sm"
+                >
+                  {isProcessing &&
+                  (activeTab === 'testcases' || activeTab === 'custom')
+                    ? 'Running...'
+                    : 'Run Code'}
+                </button>
+
+                <button
+                  onClick={handleSubmit}
+                  disabled={isProcessing}
+                  className="px-5 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-700 transition disabled:opacity-50 text-sm"
+                >
+                  {isProcessing && activeTab === 'verdict'
+                    ? 'Submitting...'
+                    : 'Submit'}
+                </button>
+              </div>
             </div>
 
-            {/* OUTPUT PANEL */}
+            {/* OUTPUT PANEL - Dynamic Height */}
             <div
-              className={`
-        transition-all duration-300 ease-in-out
-        bg-gray-50 border-t border-gray-300 flex flex-col overflow-hidden
-        ${isOutputOpen ? 'h-[40%]' : 'h-0'}
-      `}
+              className="transition-all duration-300 ease-in-out bg-gray-50 border-t border-gray-300 flex flex-col overflow-hidden"
+              style={getOutputStyle()}
             >
               {/* Tabs */}
-              <div className="flex items-center px-4 pt-2 bg-gray-100 border-b border-gray-200">
+              <div className="flex items-center px-4 pt-2 bg-gray-100 border-b border-gray-200 shrink-0">
                 {['testcases', 'custom', 'verdict', 'ai-review'].map((tab) => (
                   <button
                     key={tab}
-                    onClick={() => setActiveTab(tab)}
+                    onClick={() => {
+                      setActiveTab(tab);
+                      if (panelMode === 'editor') {
+                        setPanelMode('balanced');
+                      }
+                    }}
                     className={`px-4 py-2 text-sm font-semibold rounded-t-lg mr-2 transition
-              ${
-                activeTab === tab
-                  ? 'bg-white text-gray-800 border-t border-l border-r border-gray-200 -mb-px'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
+                      ${
+                        activeTab === tab
+                          ? 'bg-white text-gray-800 border-t border-l border-r border-gray-200 -mb-px'
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
                   >
                     {tab === 'testcases'
                       ? 'Test Cases Result'
@@ -677,8 +762,9 @@ export default function ProblemPage() {
                 ))}
 
                 <button
-                  onClick={() => setIsOutputOpen(false)}
-                  className="ml-auto text-gray-400 hover:text-gray-600 mb-1"
+                  onClick={maximizeEditor}
+                  className="ml-auto text-gray-400 hover:text-gray-600 mb-1 p-1 hover:bg-gray-200 rounded"
+                  title="Close output panel"
                 >
                   ✕
                 </button>
