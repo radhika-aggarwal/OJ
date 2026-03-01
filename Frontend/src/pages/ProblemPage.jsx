@@ -104,12 +104,21 @@ export default function ProblemPage() {
 
   const handleRun = async (e, type = 'testcases') => {
     e.preventDefault();
+
+    // Ensure only valid types are used
+    const runType = type === 'custom' ? 'custom' : 'testcases';
+
     setIsProcessing(true);
     setIsOutputOpen(true);
-    setActiveTab(type);
+    setActiveTab(runType);
     setErrorMessage('');
-    if (type === 'testcases') setRunResults([]);
-    else setCustomRunResults([]);
+
+    if (runType === 'testcases') {
+      setRunResults([]);
+    } else {
+      setCustomRunResults([]);
+    }
+
     setActiveRunCaseId(0);
 
     try {
@@ -117,10 +126,14 @@ export default function ProblemPage() {
         language,
         code,
         problemId: id,
-        customInput: type === 'custom' ? customInput : '',
+        customInput: runType === 'custom' ? customInput : '',
       });
-      if (type === 'custom') setCustomRunResults(response.results || []);
-      else setRunResults(response.results || []);
+
+      if (runType === 'custom') {
+        setCustomRunResults(response.results || []);
+      } else {
+        setRunResults(response.results || []);
+      }
     } catch (err) {
       setErrorMessage(err.message || 'Error executing code');
     } finally {
@@ -599,8 +612,10 @@ export default function ProblemPage() {
             </button>
 
             <button
-              onClick={(e) => handleRun(e, activeTab)}
-              disabled={isProcessing}
+              onClick={(e) =>
+                handleRun(e, activeTab === 'custom' ? 'custom' : 'testcases')
+              }
+              disabled={isProcessing || !code.trim()}
               className="px-5 py-2 rounded bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition-colors disabled:opacity-50 text-sm"
             >
               {isProcessing &&

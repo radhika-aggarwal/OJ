@@ -19,7 +19,7 @@ export const executeCpp = async (filePath, inputPath, timeLimit) => {
 
   // Compile step
   try {
-    await exec(`clang++ "${filePath}" -o "${outPath}"`, {
+    await exec(`g++ "${filePath}" -o "${outPath}"`, {
       timeout: timeLimit,
     });
   } catch (error) {

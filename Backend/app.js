@@ -16,7 +16,7 @@ const port = process.env.PORT || 3000;
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL,
+    origin: [process.env.FRONTEND_URL, 'https://nexjudge.vercel.app'],
     credentials: true, //for cookie permission
   }),
 );
