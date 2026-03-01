@@ -587,9 +587,15 @@ export default function ProblemPage() {
           </div>
 
           {/* Editor */}
-          <div className="flex-1 relative">
+          <div
+            className={`
+    relative transition-all duration-300 ease-in-out
+    ${isOutputOpen ? 'flex-[0.5]' : 'flex-1'}
+  `}
+          >
             <textarea
               value={code}
+              onClick={() => setIsOutputOpen(false)}
               onChange={(e) => {
                 setCode(e.target.value);
                 setHasUserEdited(true);
