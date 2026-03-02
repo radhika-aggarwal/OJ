@@ -15,7 +15,7 @@ const router = express.Router();
 
 router.get('/', protect, getAllProblems);
 
-router.get('/testcases/:problemId', protect, isAdmin, getTestCasesByProblem);
+router.get('/testcases/:problemId', protect, getTestCasesByProblem);
 
 router.get('/:id', protect, getProblem);
 
