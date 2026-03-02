@@ -94,7 +94,6 @@ export default function Login() {
           >
             Create Account
           </Link>
-          Create Account
         </p>
       </div>
     </div>
