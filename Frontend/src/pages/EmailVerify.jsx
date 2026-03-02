@@ -11,12 +11,15 @@ export default function EmailVerify() {
 
   const navigate = useNavigate();
 
+  const email =
+    location.state?.email || localStorage.getItem('verifyEmail') || '';
+
   const handleSendOtp = async () => {
     setSendingOtp(true);
     setError('');
     try {
       await sendVerifyOTP();
-      toast.success('OTP sent to your email!');
+      toast.success(`OTP sent to your email! ${email}`);
     } catch (err) {
       const msg =
         err.response?.data?.message || err.message || 'Something went wrong';
@@ -58,8 +61,9 @@ export default function EmailVerify() {
       <div className="bg-white rounded-2xl shadow-lg p-10 w-full max-w-md">
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold mb-2">Verify Your Email</h2>
-          <p className="text-gray-500">
-            Enter the 6-digit code sent to your email
+          <p className="text-gray-500 text-sm mb-6">
+            Enter the 6-digit code sent to{' '}
+            <span className="font-semibold">{email}</span>
           </p>
         </div>
 

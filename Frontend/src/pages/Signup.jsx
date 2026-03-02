@@ -43,6 +43,7 @@ export default function Signup() {
 
       login(response.data.user, response.token);
       toast.success('Account created! Please verify your email.');
+      localStorage.setItem('verifyEmail', email);
       navigate('/email-verify');
     } catch (err) {
       setError(err.message);
