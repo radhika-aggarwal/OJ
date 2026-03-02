@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { login as loginAPI } from '../services/api';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import useAuth from '../hooks/useAuth';
 
@@ -88,12 +88,13 @@ export default function Login() {
         {/* Signup */}
         <p className="text-center text-gray-500 text-sm mt-6">
           Don't have an account?
-          <a
-            href="/signup"
+          <Link
+            to="/signup"
             className="text-blue-500 font-semibold hover:underline"
           >
             Create Account
-          </a>
+          </Link>
+          Create Account
         </p>
       </div>
     </div>

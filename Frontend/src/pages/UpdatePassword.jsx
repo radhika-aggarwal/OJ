@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { updatePassword } from '../services/api';
 
@@ -94,9 +94,9 @@ export default function UpdatePassword() {
           </button>
         </form>
         <p className="text-center text-gray-500 text-sm mt-6">
-          <a href="/" className="text-blue-500 font-semibold hover:underline">
+          <Link to="/" className="text-blue-500 font-semibold hover:underline">
             ← Back to Home
-          </a>
+          </Link>
         </p>
       </div>
     </div>
